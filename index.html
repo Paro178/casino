@@ -202,4 +202,56 @@ async function set(p,d){L.set(p,d);if(DB_URL){tmo(fetch(U(p),{method:'PUT',body:
 async function list(){if(DB_URL){try{const r=await tmo(fetch(U('players')));const d=await r.json();return d?Object.values(d):[]}catch(e){}}
  const o=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('cz:players/'))o.push(JSON.parse(localStorage.getItem(k)))}}catch(e){}return o}
 if(!DB_URL)setTimeout(()=>toast('DB_URL未設定：この端末内のみ保存'),500);
+/* ===== v3: 目押しスロット・パチスロ / NPC同席ブラックジャック ===== */
+document.head.insertAdjacentHTML('beforeend','<style>.rl{position:relative;display:flex;justify-content:center;gap:6px;margin:8px 0}.rw{width:86px;height:198px;overflow:hidden;background:linear-gradient(90deg,#bbb,#fff 30%,#fff 70%,#bbb);border:3px solid #e8c14a;border-radius:8px;box-shadow:inset 0 0 14px #0008}.it{height:66px;line-height:66px;text-align:center;font-size:38px;font-weight:900;color:#111}.ln{position:absolute;left:8%;right:8%;top:50%;height:3px;background:#e33;box-shadow:0 0 8px #f00;pointer-events:none}#tabs button{min-width:30%}.stb{display:flex;gap:6px}.stc{flex:1;background:#0006;border-radius:10px;padding:6px;text-align:center;min-width:0}.stc .cd{font-size:13px;padding:4px 3px;min-width:28px}.stm{border:2px solid #e8c14a}</style>');
+const SL={},SLD={slot:{k:'slot',ts:'🍒 フルーツスロット',sy:['🍒','🍋','🔔','⭐','💎','7️⃣'],py:[5,8,15,25,50,100]},pachi:{k:'pachi',ts:'🎰 パチスロ（7揃いでボーナス）',sy:['🍒','🍉','🔔','BAR','7','🔄'],py:[5,6,10,30,60,1]}};
+function mkStrip(wt,k){const a=[];wt.forEach((w,i)=>{for(let j=0;j<w;j++)a.push(i)});let s=k*7+3;for(let i=a.length-1;i>0;i--){s=(s*1103515245+12345)&0x7fffffff;const j=s%(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
+function mkSlot(id){const d=SLD[id],N=20,H=66,st=[0,1,2].map(k=>mkStrip([4,4,3,3,3,3],k)),r=[0,1,2].map(()=>({p:R(N),m:0,t:0}));let flag=-1,boost=0,last=0,raf=0;
+ $('#'+id).innerHTML=`<div class="c sm">${d.ts}</div><div class="rl">${[0,1,2].map(k=>`<div class="rw" onclick="SL.${id}.stop(${k})"><div id="${id}c${k}"></div></div>`).join('')}<i class="ln"></i></div><div class="msg" id="m-${id}">レバーを引いてリールを目押ししよう</div><div class="c"><button id="${id}lv" onclick="SL.${id}.lever()">🎰 レバー</button></div><div class="c">${['左','中','右'].map((x,k)=>`<button class="s" id="${id}b${k}" disabled onclick="SL.${id}.stop(${k})">${x}停止</button>`).join('')}</div><div class="sm c">ランプ点灯＝内部当選。狙った絵柄を中段に、押してから最大4コマ滑ります（リールをタップでも停止）</div>`;
+ const cs=(pos,k)=>st[k][(((Math.round(pos)-1)%N)+N)%N];
+ function draw(k){const q=r[k],b=Math.floor(q.p),f=q.p-b;let h='';for(let rr=-1;rr<=2;rr++)h+=`<div class="it" style="${d.sy[st[k][(((b-rr)%N)+N)%N]]=='7'?'color:#d11':''}">${d.sy[st[k][(((b-rr)%N)+N)%N]]}</div>`;const e=$('#'+id+'c'+k);e.style.transform=`translateY(${(f-1)*H}px)`;e.innerHTML=h}
+ function check(){if(r.some(q=>q.m))return;const c=[0,1,2].map(k=>cs(r[k].p,k));let w=0,t='はずれ…';
+  if(c[0]==c[1]&&c[1]==c[2]){w=d.py[c[0]];t=d.sy[c[0]]+' 揃い！';if(d.k=='pachi'&&c[0]==4){boost=8;t+=' ボーナス突入！当たり率UP'}else if(boost>0)boost--}
+  else if(c[0]==0){w=2;t='🍒 チェリー！'}else{if(boost>0)boost--;if(flag>=0)t='当選を取りこぼした！目押しを磨こう'}
+  $('#'+id+'lv').disabled=false;fin(id,w,t+(boost>0?`（ボーナス残り${boost}G）`:''))}
+ function loop(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;let any=0;r.forEach((q,k)=>{const mv=q.m;if(mv==1){q.p+=22*dt;any=1}else if(mv==2){q.p=Math.min(q.t,q.p+45*dt);if(q.p>=q.t){q.m=0;tone(500,.05,0,'square',.05);draw(k);check();return}any=1}if(mv)draw(k)});raf=any?requestAnimationFrame(loop):0}
+ r.forEach((q,k)=>draw(k));
+ SL[id]={async lever(){if(busy||r.some(q=>q.m))return;if(!await start())return;const key=cfg[d.k]*(boost>0?3:1);flag=-1;
+   if(R(10000)<key*100){let x=R(100),i=0;while(x>=SW[i]){x-=SW[i];i++}flag=i}else if(R(100)<15)flag=-2;
+   $('#m-'+id).className='msg';$('#m-'+id).textContent=flag>=0?`🌟 ランプ点灯！ ${d.sy[flag]} を狙え！`:flag==-2?'🍒 チェリーのチャンス！左で狙え':'…';
+   $('#'+id+'lv').disabled=true;[0,1,2].forEach(k=>{r[k].m=1;$('#'+id+'b'+k).disabled=false});tone(300,.1,0,'square',.06);if(!raf){last=performance.now();raf=requestAnimationFrame(loop)}},
+  stop(k){const q=r[k];if(q.m!=1)return;const base=Math.ceil(q.p),o0=r.map((x,j)=>x.m==0?cs(x.p,j):x.m==2?cs(x.t,j):null);
+   const bad=pos=>{const c=cs(pos,k),o=o0.slice();o[k]=c;return(o.every(v=>v!==null&&v==o[0])&&flag!=o[0])||(k==0&&c==0&&flag!=-2&&flag!=0)};
+   const want=pos=>{const c=cs(pos,k);return flag>=0?c==flag:flag==-2&&k==0&&c==0};
+   let pick=base,f=-1;for(let s=0;s<=4;s++)if(want(base+s)){f=base+s;break}
+   if(f>=0)pick=f;else for(let s=0;s<=4;s++)if(!bad(base+s)){pick=base+s;break}
+   q.m=2;q.t=pick;$('#'+id+'b'+k).disabled=true}}}
+mkSlot('slot');mkSlot('pachi');
+/* ブラックジャック：NPCプレイヤーと同卓 */
+const NP=[{n:'ルナ',e:'👩‍🦰',s:0},{n:'ケン',e:'🧔',s:1},{n:'ミミ',e:'🐱',s:2}],nb=L.get('npc')||[];NP.forEach((x,i)=>x.bank=nb[i]>=100?nb[i]:5000);
+const T={dk:[],d:[],p:[],n:[],on:0,run:0,fin:0};
+$('#bj').innerHTML=`<div class="c sm">ブラックジャック（NPCと同卓・ディーラーは17でスタンド）</div><div class="c sm">ディーラー <b id="dv2"></b></div><div class="c" id="sd"></div><div class="stb" id="sn"></div><div class="c sm">あなた <b id="pv2"></b></div><div class="c" id="sp"></div><div class="msg" id="m-bj">ディールで開始。BJは×2.5</div><div class="c"><button id="bdeal" onclick="nDeal()">ディール</button><button id="bhit" onclick="nHit()" disabled>ヒット</button><button id="bst" onclick="nStand()" disabled>スタンド</button><button id="bdb" onclick="nDbl()" disabled>ダブル</button></div>`;
+function nDraw(){const f=T.fin;$('#sd').innerHTML=T.d.length?(f?T.d.map(c=>cd(c)).join(''):cd(T.d[0])+cd(null)):'';$('#dv2').textContent=f?val(T.d):'';
+ $('#sp').innerHTML=T.p.map(c=>cd(c)).join('');$('#pv2').textContent=T.p.length?val(T.p):'';
+ $('#sn').innerHTML=NP.map((x,i)=>{const h=(T.n[i]||{}).h||[],v=h.length?val(h):'',z=T.n[i]||{};return`<div class="stc ${z.act?'stm':''}"><b>${x.e}${x.n}</b><div class="sm">${Math.floor(x.bank).toLocaleString()}円${z.b?' 賭'+z.b:''}</div><div>${h.map(c=>cd(c)).join('')}</div><div class="sm">${v}${v>21?' バスト':''} ${z.res||''}</div></div>`}).join('');
+ $('#bdeal').disabled=!!T.run;['bhit','bst'].forEach(i=>$('#'+i).disabled=!T.on);$('#bdb').disabled=!(T.on&&T.p.length==2&&me.money>=cur)}
+function npcHit(x,v){const u=val([T.d[0]]);return x.s==0?(v<12||(v<17&&u>=7)):x.s==1?(v<=16||(v==17&&R(3)==0)):v<14}
+nDraw();
+async function nDeal(){if(!await start())return;T.run=1;T.fin=0;T.dk=deck();T.d=[T.dk.pop(),T.dk.pop()];T.p=[T.dk.pop(),T.dk.pop()];
+ T.n=NP.map(x=>{if(x.bank<100)x.bank=3000;const b=Math.min(x.bank,[100,200,300,500][R(4)]);x.bank-=b;return{b,h:[T.dk.pop(),T.dk.pop()],res:'',act:0}});
+ $('#m-bj').textContent='';nDraw();await sleep(600);
+ for(let i=0;i<3;i++){const z=T.n[i];z.act=1;nDraw();await sleep(500);while(val(z.h)<21&&npcHit(NP[i],val(z.h))){z.h.push(T.dk.pop());tone(700,.04,0,'square',.04);nDraw();await sleep(700)}z.act=0}
+ T.on=1;nDraw();if(val(T.p)==21)nEnd('bj')}
+function nHit(){if(!T.on)return;T.p.push(T.dk.pop());if(val(T.p)>21)nEnd('bust');else nDraw()}
+function nStand(){if(T.on)nEnd('st')}
+async function nDbl(){if(!T.on||T.p.length!=2||me.money<cur)return toast('ダブルできません');await add(-cur);cur*=2;T.p.push(T.dk.pop());nEnd(val(T.p)>21?'bust':'st')}
+async function nEnd(k){T.on=0;T.fin=1;nDraw();await sleep(500);const pv=val(T.p),play=(dk,h)=>{while(val(h)<17)h.push(dk.pop());return h};
+ if(k!='bj'){while(val(T.d)<17){T.d.push(T.dk.pop());nDraw();await sleep(700)}
+  if(k!='bust'&&val(T.d)<=21&&val(T.d)>pv&&R(10000)<cfg.bj*100){T.d=play(deck(),[T.d[0],T.d[1]]);nDraw()}}
+ const dv=val(T.d),dn=T.d.length==2&&dv==21;
+ T.n.forEach((z,i)=>{const v=val(z.h),nat=z.h.length==2&&v==21;let m=0;if(v>21)m=0;else if(nat)m=dn?1:2.5;else if(dv>21||v>dv)m=2;else if(v==dv)m=1;NP[i].bank+=z.b*m;z.res=m>1?`WIN +${Math.floor(z.b*(m-1))}`:m==1?'PUSH':'LOSE'});
+ L.set('npc',NP.map(x=>x.bank));let w=0,t;
+ if(k=='bust'){t='バスト…'}else if(k=='bj'){if(dn){w=1;t='お互いBJ 引き分け'}else{w=2.5;t='🎉 ブラックジャック！'}}
+ else if(dv>21||pv>dv){w=2;t='勝ち！'}else if(pv==dv){w=1;t='引き分け'}else t='負け…';
+ T.run=0;nDraw();await fin('bj',w,t)}
 </script></body></html>
