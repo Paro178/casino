@@ -1,0 +1,205 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>ロイヤルカジノ</title>
+<script>/* ★ここにFirebase Realtime DatabaseのURLを貼る（例: "https://xxxx-default-rtdb.asia-southeast1.firebasedatabase.app"） */
+const DB_URL="https://parokajino-default-rtdb.asia-southeast1.firebasedatabase.app";</script>
+<style>
+:root{color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#0b1d15;--cd:#15372a;--bd:#2f6a50;--tx:#f4ecd0;--go:#e8c14a;--rd:#c0392b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,"Hiragino Sans","Noto Sans JP",sans-serif;max-width:560px;margin:auto;padding:10px}
+h1{font-size:20px;color:var(--go);text-align:center;margin:6px 0}
+.box{background:var(--cd);border:1px solid var(--bd);border-radius:12px;padding:12px;margin:10px 0}
+button{background:var(--go);color:#2a1d00;border:0;border-radius:8px;padding:10px 14px;font-weight:700;font-size:15px;margin:3px}
+button.s{background:#244f3c;color:var(--tx);border:1px solid var(--bd)}button:disabled{opacity:.4}
+input,select{background:#0b1d15;color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:9px;font-size:16px;width:100%;margin:3px 0}
+#top{display:flex;justify-content:space-between;align-items:center;gap:6px}.mny{font-size:22px;color:var(--go);font-weight:800}
+#tabs{display:flex;flex-wrap:wrap}#tabs button{flex:1;min-width:30%}
+.reel,.dg{display:inline-block;width:80px;height:90px;line-height:90px;font-size:48px;text-align:center;background:#000;border:2px solid var(--go);border-radius:10px;margin:4px}
+.msg{min-height:26px;text-align:center;font-weight:700;margin:8px 0}.win{color:var(--go)}.lose{color:#ff8a7a}
+.cd{display:inline-block;background:#fff;color:#111;border-radius:6px;padding:8px 6px;margin:3px;font-weight:700;min-width:42px;text-align:center;font-size:18px}.cd.rd{color:#c0151b}
+.cd.h{outline:3px solid var(--go);transform:translateY(-6px)}
+.rn{font-size:56px;font-weight:800;width:110px;height:110px;line-height:110px;border-radius:50%;margin:8px auto;text-align:center;border:4px solid var(--go)}
+.r{background:#b3201a}.b{background:#111}.g{background:#14803c}
+.c{text-align:center}.sm{font-size:12px;opacity:.8}
+#adm{position:fixed;inset:0;background:#000d;overflow:auto;padding:12px;z-index:9}
+table{width:100%}td{padding:2px}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#000;color:#fff;padding:8px 14px;border-radius:20px;display:none;z-index:99}
+</style><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#0b1d15">
+<style>
+body{background:radial-gradient(ellipse at top,#1b5a3f 0,#0b1d15 70%) fixed;-webkit-text-size-adjust:100%;touch-action:manipulation}
+h1{font-size:26px;letter-spacing:3px;text-shadow:0 0 14px #e8c14a99,0 2px 0 #000}
+.box{background:linear-gradient(160deg,#1c4a37,#112b20);border:1px solid #e8c14a55;box-shadow:0 6px 18px #0008,inset 0 1px 0 #ffffff1a}
+.box.g{background:radial-gradient(ellipse at center,#20804f 0,#0e4a2e 75%);border:3px solid #6b4a1f;box-shadow:0 0 0 2px #e8c14a99,inset 0 0 40px #000a,0 8px 20px #000a}
+button{background:linear-gradient(#f8dc70,#c9992a);box-shadow:0 3px 0 #7a5a10,0 4px 8px #0006;transition:transform .08s;-webkit-appearance:none}
+button:active{transform:translateY(3px);box-shadow:0 0 0 #7a5a10}
+button.s{background:linear-gradient(#2c6a50,#1b4a37);box-shadow:0 3px 0 #0a2418,0 4px 8px #0006}
+.reel,.dg{background:linear-gradient(#000,#2a2a2a 50%,#000);box-shadow:inset 0 0 16px #000,0 0 10px #e8c14a66}
+.cd{box-shadow:0 3px 8px #0007;animation:dl .35s both}@keyframes dl{from{transform:translateY(-24px) rotate(-10deg);opacity:0}}
+.rn{width:64px;height:64px;line-height:64px;font-size:30px;margin:4px auto}
+#mny{text-shadow:0 0 10px #e8c14a88}
+#bigwin{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;z-index:50;font-size:44px;font-weight:900;color:#f8dc70;text-shadow:0 0 22px #e8c14a,0 3px 0 #000;animation:pop 2.4s both;background:radial-gradient(#000a,#0000 70%)}
+@keyframes pop{0%{transform:scale(.3);opacity:0}12%{transform:scale(1.1);opacity:1}85%{opacity:1}100%{opacity:0}}
+.cf{position:fixed;top:-40px;font-size:28px;font-style:normal;animation:fall 2.2s linear both}@keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+</style>
+</head><body>
+<h1>🎰 ロイヤルカジノ 🎰</h1>
+<div id="login" class="box"><div class="c">ニックネームを入力して参加</div><input id="nm" maxlength="12" placeholder="ニックネーム"><button style="width:100%" onclick="login()">参加する</button><div class="sm c">同じ名前で入ると所持金が引き継がれます</div></div>
+<div id="app" hidden>
+<div class="box" id="top"><div><div id="who"></div><div class="mny" id="mny"></div></div><div><button class="s" id="admbtn" hidden onclick="openAdm()">操作室</button><button class="s" onclick="logout()">退出</button></div></div>
+<div class="box">賭け金 <input id="bet" type="number" value="100" min="1"><div class="c"><button class="s" onclick="sb(100)">100</button><button class="s" onclick="sb(500)">500</button><button class="s" onclick="sb(1000)">1000</button><button class="s" onclick="sb(5000)">5000</button><button class="s" onclick="sb(me.money)">ALL</button></div></div>
+<div id="tabs"><button onclick="tab('slot')">スロット</button><button onclick="tab('pachi')">パチンコ</button><button onclick="tab('roul')">ルーレット</button><button onclick="tab('bj')">ブラックジャック</button><button onclick="tab('pk')">ポーカー</button></div>
+
+<div class="box g" id="slot"><div class="c"><span class="reel">🍒</span><span class="reel">🍒</span><span class="reel">🍒</span></div><div class="msg" id="m-slot">揃えば大当たり！ 🍒2つで×2</div><div class="c"><button onclick="slot()">スピン</button></div><div class="sm c">配当：🍒×5 🍋×8 🔔×15 ⭐×25 💎×50 7️⃣×100</div></div>
+
+<div class="box g" id="pachi" hidden><div class="c"><span class="dg">7</span><span class="dg">7</span><span class="dg">7</span></div><div class="msg" id="m-pachi">ゾロ目で大当たり！</div><div class="c sm" id="kk"></div><div class="c"><button onclick="pachi()">打つ</button></div><div class="sm c">ゾロ目×10 / 777×30＋確変（当たり確率5倍）</div></div>
+
+<div class="box g" id="roul" hidden><div class="rn g" id="rnum">0</div><select id="rt"><option value="r">赤 (×2)</option><option value="b">黒 (×2)</option><option value="e">偶数 (×2)</option><option value="o">奇数 (×2)</option><option value="l">1〜18 (×2)</option><option value="h">19〜36 (×2)</option><option value="n">数字ストレート (×36)</option></select><input id="rn" type="number" min="0" max="36" value="7" placeholder="数字 0-36"><div class="msg" id="m-roul">ベットを選んで回そう</div><div class="c"><button onclick="roul()">ルーレットを回す</button></div></div>
+
+<div class="box g" id="bj" hidden><div class="sm">ディーラー <span id="dv"></span></div><div id="dh"></div><div class="sm">あなた <span id="pv"></span></div><div id="ph"></div><div class="msg" id="m-bj">ディール！ BJは×2.5</div><div class="c"><button id="bdeal" onclick="bjDeal()">ディール</button><button id="bhit" onclick="bjHit()" disabled>ヒット</button><button id="bst" onclick="bjStand()" disabled>スタンド</button></div></div>
+
+<div class="box g" id="pk" hidden><div id="kh" class="c"></div><div class="msg" id="m-pk">ビデオポーカー（ジャックス・オア・ベター）</div><div class="c"><button id="pdeal" onclick="pkDeal()">ディール</button><button id="pdraw" onclick="pkDraw()" disabled>ドロー</button></div><div class="sm c">カードをタップでホールド／ロイヤル×250 SF×50 4K×25 FH×9 フラッシュ×6 ストレート×4 3K×3 2P×2 J以上のペア×1</div></div>
+</div>
+
+<div id="adm" hidden><div class="box" style="max-width:560px;margin:auto">
+<div style="display:flex;justify-content:space-between"><b>🔧 操作室</b><button class="s" onclick="$('#adm').hidden=true">閉じる</button></div>
+<div id="adin"><input id="pw" type="password" placeholder="パスワード" inputmode="numeric"><button style="width:100%" onclick="chk()">入室</button></div>
+<div id="adbody" hidden><b>ゲーム設定</b><div id="cf"></div><button onclick="saveCfg()">設定を保存</button><hr><b>プレイヤーの所持金</b><div class="sm" id="ownnote"></div><div id="pl"></div></div></div></div>
+<div id="toast"></div>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const R=n=>Math.floor(Math.random()*n),sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const hex=s=>[...new TextEncoder().encode(s)].map(b=>b.toString(16).padStart(2,'0')).join('');
+const ADMIN=['ぱろ','パロ','りゅうが','リュウガ'],OWNER=['ぱろ','パロ'];
+const DEF={start:10000,slot:8,pachi:6,roul:0,bj:0,poker:0};
+const K=[['start','初期所持金(円・新規のみ)'],['slot','スロット 当たり確率(%)'],['pachi','パチンコ 当たり確率(%)'],['roul','ルーレット 有利補正(%)'],['bj','ブラックジャック 有利補正(%)'],['poker','ポーカー ドロー改善(%)']];
+let db=null,me=null,pid='',cfg={...DEF},busy=0,cur=0;
+const dbp=Promise.race([(async()=>{try{return await window.claude.use('db')}catch(e){return null}})(),sleep(2500).then(()=>null)]);
+const tmo=(p,ms=3000)=>Promise.race([p,sleep(ms).then(()=>{throw new Error('timeout')})]);
+function toast(t){const e=$('#toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',2200)}
+const L={get:p=>{try{return JSON.parse(localStorage.getItem('cz:'+p))}catch(e){return null}},set:(p,d)=>{try{localStorage.setItem('cz:'+p,JSON.stringify(d))}catch(e){}}};
+async function get(p){if(db){try{const s=await tmo(db.doc(p).get());return s.exists?s.data():null}catch(e){}}return L.get(p)}
+async function set(p,d){L.set(p,d);if(db){tmo(db.doc(p).set(d)).catch(()=>toast('共有保存に失敗しました'))}}
+async function list(){if(db){try{return(await tmo(db.collection('players').get())).docs.map(d=>d.data())}catch(e){}}
+ const o=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('cz:players/'))o.push(JSON.parse(localStorage.getItem(k)))}}catch(e){}return o}
+async function sync(){const p=await get('players/'+pid);if(p)me.money=p.money;cfg={...DEF,...(await get('cfg/main'))};upd()}
+function upd(){$('#mny').textContent='💰 '+Math.floor(me.money).toLocaleString()+' 円'}
+async function add(n){me.money+=n;upd();await set('players/'+pid,{name:me.name,money:me.money})}
+async function login(n){n=(typeof n=='string'?n:$('#nm').value).trim();if(!n)return toast('名前を入力してください');
+ try{await login_(n)}catch(e){toast('エラー: '+e.message)}}
+async function login_(n){toast('接続中…');
+ db=await dbp;pid=hex(n);cfg={...DEF,...(await get('cfg/main'))};let p=await get('players/'+pid);
+ if(!p){p={name:n,money:cfg.start};await set('players/'+pid,p)}me={name:n,money:p.money};L.set('last',n);
+ $('#login').hidden=true;$('#app').hidden=false;$('#who').textContent='👤 '+n;$('#admbtn').hidden=!ADMIN.includes(n);upd();tab('slot')}
+function logout(){me=null;$('#app').hidden=true;$('#login').hidden=false}
+const lastN=L.get('last');if(lastN)$('#nm').value=lastN;
+function tab(t){['slot','pachi','roul','bj','pk'].forEach(x=>$('#'+x).hidden=x!=t)}
+function sb(n){$('#bet').value=Math.max(1,Math.floor(n))}
+async function start(){if(busy)return 0;busy=1;await sync();const b=Math.floor(+$('#bet').value);
+ if(!(b>0)||b>me.money){toast('賭け金が不正か所持金不足です');busy=0;return 0}cur=b;await add(-b);return 1}
+async function fin(id,w,t){if(w>0)await add(cur*w);const e=$('#m-'+id);e.className='msg '+(w>0?'win':'lose');e.textContent=t+(w>0?`　+${Math.floor(cur*w).toLocaleString()}円`:'');busy=0}
+/* スロット */
+const SY=['🍒','🍋','🔔','⭐','💎','7️⃣'],SP=[5,8,15,25,50,100],SW=[30,25,18,13,9,5];
+async function slot(){if(!await start())return;let res;
+ if(R(10000)<cfg.slot*100){let r=R(100),i=0;while(r>=SW[i]){r-=SW[i];i++}res=[i,i,i]}else{do res=[R(6),R(6),R(6)];while(res[0]==res[1]&&res[1]==res[2])}
+ const el=$$('#slot .reel');for(let k=0;k<3;k++){for(let t=0;t<8+k*5;t++){el.forEach((e,j)=>{if(j>=k)e.textContent=SY[R(6)]});await sleep(60)}el[k].textContent=SY[res[k]]}
+ let w=0;if(res[0]==res[1]&&res[1]==res[2])w=SP[res[0]];else if(res.filter(x=>!x).length>=2)w=2;
+ await fin('slot',w,w>=25?'🎉 大当たり！！':w?'当たり！':'はずれ')}
+/* パチンコ */
+let kk=0;
+async function pachi(){if(!await start())return;const hit=R(10000)<cfg.pachi*100*(kk>0?5:1);let d;
+ if(hit){const x=1+R(9);d=[x,x,x]}else{const a=1+R(9);d=R(3)?[1+R(9),1+R(9),1+R(9)]:[a,a,a%9+1];if(d[0]==d[1]&&d[1]==d[2])d[2]=d[2]%9+1}
+ const el=$$('#pachi .dg');for(let k=0;k<3;k++){for(let t=0;t<10+k*8;t++){el.forEach((e,j)=>{if(j>=k)e.textContent=1+R(9)});await sleep(55)}el[k].textContent=d[k]}
+ let w=0,t='はずれ';if(hit){w=d[0]==7?30:10;kk=d[0]==7?6:3;t=d[0]==7?'🔥 777 大当たり＆確変突入！':'🎉 大当たり！'}else{kk=Math.max(0,kk-1);if(d[0]==d[1])t='惜しい！リーチ外れ'}
+ $('#kk').textContent=kk>0?`🔥 確変中 残り${kk}回`:'';await fin('pachi',w,t)}
+/* ルーレット */
+const RED=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]),cl=n=>n?RED.has(n)?'r':'b':'g';
+const win=(t,v,n)=>t=='n'?n==v:n>0&&(t=='r'?RED.has(n):t=='b'?!RED.has(n):t=='e'?n%2==0:t=='o'?n%2==1:t=='l'?n<=18:n>=19);
+async function roul(){const t=$('#rt').value,v=+$('#rn').value;if(t=='n'&&!(Number.isInteger(v)&&v>=0&&v<=36))return toast('数字は0〜36で入力してください');
+ if(!await start())return;let n=R(37);if(!win(t,v,n)&&R(10000)<cfg.roul*100){const c=[...Array(37).keys()].filter(x=>win(t,v,x));n=c[R(c.length)]}
+ const e=$('#rnum');for(let i=0;i<18;i++){const x=R(37);e.textContent=x;e.className='rn '+cl(x);await sleep(50+i*9)}
+ e.textContent=n;e.className='rn '+cl(n);const w=win(t,v,n)?(t=='n'?36:2):0;await fin('roul',w,w?'的中！':'ハズレ')}
+/* カード共通 */
+const SU=['♠','♥','♦','♣'],RK=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const deck=()=>{const d=[];SU.forEach(s=>RK.forEach(r=>d.push({r,s})));return d.sort(()=>Math.random()-.5)};
+const cd=(c,x='',i='')=>c?`<span class="cd ${'♥♦'.includes(c.s)?'rd':''} ${x}" ${i}>${c.r}${c.s}</span>`:'<span class="cd">？</span>';
+/* ブラックジャック */
+const B={on:0};
+const val=h=>{let t=0,a=0;h.forEach(c=>{t+=c.r=='A'?(a++,11):'JQK'.includes(c.r)?10:+c.r});while(t>21&&a>0){t-=10;a--}return t};
+function bjDraw(){$('#ph').innerHTML=B.p.map(c=>cd(c)).join('');$('#pv').textContent=val(B.p);
+ $('#dh').innerHTML=B.on?cd(B.d[0])+cd(null):B.d.map(c=>cd(c)).join('');$('#dv').textContent=B.on?'':val(B.d);
+ $('#bdeal').disabled=B.on;$('#bhit').disabled=!B.on;$('#bst').disabled=!B.on}
+async function bjDeal(){if(!await start())return;B.dk=deck();B.p=[B.dk.pop(),B.dk.pop()];B.d=[B.dk.pop(),B.dk.pop()];B.on=1;$('#m-bj').textContent='';bjDraw();if(val(B.p)==21)bjEnd('bj')}
+function bjHit(){B.p.push(B.dk.pop());if(val(B.p)>21)bjEnd('bust');else bjDraw()}
+function bjStand(){bjEnd('st')}
+async function bjEnd(k){B.on=0;let w=0,t;const pv=val(B.p);
+ if(k=='bust')t='バスト…';
+ else if(k=='bj'){if(val(B.d)==21){w=1;t='お互いBJ 引き分け'}else{w=2.5;t='🎉 ブラックジャック！'}}
+ else{const play=(dk,h)=>{while(val(h)<17)h.push(dk.pop());return h};let h=play(B.dk,[...B.d]);
+  if(val(h)<=21&&val(h)>pv&&R(10000)<cfg.bj*100)h=play(deck(),[...B.d]);B.d=h;const dv=val(h);
+  if(dv>21||pv>dv){w=2;t='勝ち！'}else if(pv==dv){w=1;t='引き分け'}else t='負け…'}
+ bjDraw();await fin('bj',w,t)}
+/* ビデオポーカー */
+const PT=[['ロイヤルフラッシュ',250],['ストレートフラッシュ',50],['フォーカード',25],['フルハウス',9],['フラッシュ',6],['ストレート',4],['スリーカード',3],['ツーペア',2],['ジャックス・オア・ベター',1]];
+const rv=c=>c.r=='A'?14:RK.indexOf(c.r)+1;
+function ev(h){const vs=h.map(rv).sort((a,b)=>a-b),fl=h.every(c=>c.s==h[0].s),cn={};vs.forEach(x=>cn[x]=(cn[x]||0)+1);
+ const g=Object.values(cn).sort((a,b)=>b-a),st=new Set(vs).size==5&&(vs[4]-vs[0]==4||vs.join()=='2,3,4,5,14');
+ if(st&&fl)return vs[0]==10?0:1;if(g[0]==4)return 2;if(g[0]==3&&g[1]==2)return 3;if(fl)return 4;if(st)return 5;if(g[0]==3)return 6;
+ if(g[0]==2&&g[1]==2)return 7;if(g[0]==2&&+Object.keys(cn).find(k=>cn[k]==2)>=11)return 8;return 9}
+const P={on:0,h:[],hold:[]};
+function pkDraw_(){$('#kh').innerHTML=P.h.map((c,i)=>cd(c,P.hold[i]?'h':'',`onclick="hold(${i})"`)).join('');$('#pdeal').disabled=P.on;$('#pdraw').disabled=!P.on}
+function hold(i){if(!P.on)return;P.hold[i]=!P.hold[i];pkDraw_()}
+async function pkDeal(){if(!await start())return;P.dk=deck();P.h=[1,2,3,4,5].map(()=>P.dk.pop());P.hold=[0,0,0,0,0];P.on=1;$('#m-pk').textContent='残すカードをタップ→ドロー';pkDraw_()}
+async function pkDraw(){P.on=0;const mk=()=>P.h.map((c,i)=>P.hold[i]?c:P.dk.pop());let a=mk();
+ if(R(10000)<cfg.poker*100){const b=mk();if(ev(b)<ev(a))a=b}P.h=a;P.hold=[0,0,0,0,0];pkDraw_();const i=ev(a);
+ await fin('pk',i<9?PT[i][1]:0,i<9?PT[i][0]+'！':'役なし')}
+/* 操作室 */
+function openAdm(){$('#adm').hidden=false;$('#adin').hidden=false;$('#adbody').hidden=true;$('#pw').value=''}
+function chk(){if($('#pw').value=='128686'){$('#adin').hidden=true;$('#adbody').hidden=false;rAdm()}else toast('パスワードが違います')}
+async function rAdm(){await sync();$('#cf').innerHTML=K.map(([k,l])=>`<div class="sm">${l}</div><input type="number" step="any" id="c_${k}" value="${cfg[k]}">`).join('');
+ const own=OWNER.includes(me.name);$('#ownnote').textContent=own?'金額を変更して「保存」':'※所持金の変更は「ぱろ」のみ可能です（閲覧のみ）';
+ const ps=(await list()).sort((a,b)=>b.money-a.money);window.PN={};ps.forEach(p=>PN[hex(p.name)]=p.name);
+ $('#pl').innerHTML='<table>'+ps.map(p=>`<tr><td>${E(p.name)}</td><td><input type="number" id="p_${hex(p.name)}" value="${Math.floor(p.money)}" ${own?'':'disabled'}></td><td>${own?`<button class="s" onclick="savePl('${hex(p.name)}')">保存</button>`:''}</td></tr>`).join('')+'</table>'}
+async function saveCfg(){K.forEach(([k])=>{const v=parseFloat($('#c_'+k).value);cfg[k]=isNaN(v)?DEF[k]:Math.max(0,v)});await set('cfg/main',cfg);toast('設定を保存しました')}
+async function savePl(h){const n=PN[h];if(!OWNER.includes(me.name))return;const m=Math.max(0,Math.floor(+$('#p_'+h).value||0));
+ await set('players/'+h,{name:n,money:m});if(h==pid){me.money=m;upd()}toast(n+' の所持金を更新')}
+/* ===== 強化パック ===== */
+let AC=null,mute=false;
+function tone(f,d,t=0,ty='sine',v=.15){if(mute)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();AC.resume();const o=AC.createOscillator(),g=AC.createGain(),s=AC.currentTime+t;o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,s);g.gain.exponentialRampToValueAtTime(.001,s+d);o.connect(g);g.connect(AC.destination);o.start(s);o.stop(s+d)}catch(e){}}
+const snd=w=>w?[523,659,784,1047].forEach((f,i)=>tone(f,.25,i*.09,'triangle')):tone(150,.35,0,'sawtooth',.08);
+document.addEventListener('click',e=>{if(e.target.closest('button'))tone(660,.05,0,'square',.04)});
+$('#top>div:last-child').insertAdjacentHTML('afterbegin','<button class="s" onclick="mute=!mute;this.textContent=mute?\'🔇\':\'🔊\'">🔊</button>');
+function big(t,a){const o=document.createElement('div');o.id='bigwin';o.innerHTML=`<div>${t}</div><div style="font-size:30px">+${a}円</div>`+Array.from({length:26},()=>`<i class="cf" style="left:${R(96)}%;animation-delay:${R(900)}ms">${['🪙','💰','✨','🎉'][R(4)]}</i>`).join('');document.body.append(o);setTimeout(()=>o.remove(),2500)}
+async function fin(id,w,t){if(w>0)await add(cur*w);const e=$('#m-'+id);e.className='msg '+(w>0?'win':'lose');e.textContent=t+(w>0?`　+${Math.floor(cur*w).toLocaleString()}円`:'');busy=0;snd(w>0);if(w>=10)big('BIG WIN!!',Math.floor(cur*w).toLocaleString())}
+let shown=0;
+function upd(){const to=Math.floor(me.money),from=shown,t0=performance.now();(function f(n){const k=Math.min(1,(n-t0)/500);shown=Math.round(from+(to-from)*k);$('#mny').textContent='💰 '+shown.toLocaleString()+' 円';if(k<1)requestAnimationFrame(f)})(t0)}
+/* ルーレット：実物ホイール */
+const WO=[0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26],WC={r:'#b3201a',b:'#151515',g:'#14803c'};let wrot=0;
+$('#rnum').insertAdjacentHTML('beforebegin','<canvas id="wh" width="260" height="260" style="display:block;margin:4px auto;max-width:100%"></canvas>');
+function wheel(rot){const cv=$('#wh'),x=cv.getContext('2d'),S=cv.width,c=S/2,a=2*Math.PI/37;x.clearRect(0,0,S,S);x.save();x.translate(c,c);x.rotate(rot);
+ x.beginPath();x.arc(0,0,c-2,0,7);x.fillStyle='#6b4a1f';x.fill();
+ WO.forEach((n,i)=>{x.beginPath();x.moveTo(0,0);x.arc(0,0,c-8,i*a-a/2-Math.PI/2,i*a+a/2-Math.PI/2);x.closePath();x.fillStyle=WC[cl(n)];x.fill();x.strokeStyle='#e8c14a';x.lineWidth=1;x.stroke();
+  x.save();x.rotate(i*a);x.fillStyle='#fff';x.font='bold 11px sans-serif';x.textAlign='center';x.fillText(n,0,-c+24);x.restore()});
+ x.beginPath();x.arc(0,0,c*.42,0,7);x.fillStyle='#2b1a0a';x.fill();x.strokeStyle='#e8c14a';x.lineWidth=3;x.stroke();x.beginPath();x.arc(0,0,8,0,7);x.fillStyle='#e8c14a';x.fill();x.restore();
+ x.beginPath();x.moveTo(c-10,0);x.lineTo(c+10,0);x.lineTo(c,22);x.closePath();x.fillStyle='#f8dc70';x.fill();x.strokeStyle='#000';x.stroke()}
+wheel(0);
+async function roul(){const bt=$('#rt').value,v=+$('#rn').value;if(bt=='n'&&!(Number.isInteger(v)&&v>=0&&v<=36))return toast('数字は0〜36で入力してください');
+ if(!await start())return;let n=R(37);if(!win(bt,v,n)&&R(10000)<cfg.roul*100){const c=[...Array(37).keys()].filter(x=>win(bt,v,x));n=c[R(c.length)]}
+ const P2=2*Math.PI,idx=WO.indexOf(n),from=wrot%P2,d=(((-idx*P2/37-from)%P2)+P2)%P2,to=from+10*Math.PI+d,t0=performance.now();let last=0;
+ await new Promise(r=>{(function f(now){const k=Math.min(1,(now-t0)/3800);wrot=from+(to-from)*(1-Math.pow(1-k,3));wheel(wrot);const s=Math.floor(wrot/(P2/37));if(s!=last){last=s;tone(900,.03,0,'square',.03)}k<1?requestAnimationFrame(f):r()})(t0)});
+ wrot=to;const e=$('#rnum');e.textContent=n;e.className='rn '+cl(n);const w=win(bt,v,n)?(bt=='n'?36:2):0;await fin('roul',w,(w?'的中！ ':'ハズレ ')+n)}
+/* ブラックジャック：ダブルダウン */
+$('#bst').insertAdjacentHTML('afterend','<button id="bdb" onclick="bjDbl()" disabled>ダブル</button>');
+const _bd=bjDraw;bjDraw=function(){_bd();$('#bdb').disabled=!(B.on&&B.p.length==2&&me.money>=cur)};
+async function bjDbl(){if(!B.on||B.p.length!=2||me.money<cur)return toast('ダブルできません');await add(-cur);cur*=2;B.p.push(B.dk.pop());bjEnd(val(B.p)>21?'bust':'st')}
+/* ランキング */
+$('#tabs').insertAdjacentHTML('beforeend','<button onclick="tab(\'rank\')">🏆ランキング</button>');
+$('#app').insertAdjacentHTML('beforeend','<div class="box" id="rank" hidden></div>');
+function tab(t){['slot','pachi','roul','bj','pk','rank'].forEach(x=>$('#'+x).hidden=x!=t);if(t=='rank')rk()}
+async function rk(){const ps=(await list()).sort((a,b)=>b.money-a.money).slice(0,10);$('#rank').innerHTML='<b>🏆 所持金ランキング</b>'+ps.map((p,i)=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #fff2"><span>${['🥇','🥈','🥉'][i]||(i+1)+'.'} ${E(p.name)}</span><b>${Math.floor(p.money).toLocaleString()}円</b></div>`).join('')}
+
+/* ===== Firebase Realtime Database (REST) : ログイン不要の共有保存 ===== */
+const U=p=>DB_URL.replace(/\/$/,'')+'/'+p+'.json';
+async function get(p){if(DB_URL){try{const r=await tmo(fetch(U(p)));if(r.ok){const d=await r.json();L.set(p,d);return d}}catch(e){}}return L.get(p)}
+async function set(p,d){L.set(p,d);if(DB_URL){tmo(fetch(U(p),{method:'PUT',body:JSON.stringify(d)})).then(r=>{if(!r.ok)throw 0}).catch(()=>toast('共有保存に失敗しました'))}}
+async function list(){if(DB_URL){try{const r=await tmo(fetch(U('players')));const d=await r.json();return d?Object.values(d):[]}catch(e){}}
+ const o=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('cz:players/'))o.push(JSON.parse(localStorage.getItem(k)))}}catch(e){}return o}
+if(!DB_URL)setTimeout(()=>toast('DB_URL未設定：この端末内のみ保存'),500);
+</script></body></html>
