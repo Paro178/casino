@@ -39,7 +39,7 @@ button.s{background:linear-gradient(#2c6a50,#1b4a37);box-shadow:0 3px 0 #0a2418,
 .cf{position:fixed;top:-40px;font-size:28px;font-style:normal;animation:fall 2.2s linear both}@keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
 </style>
 </head><body>
-<h1>🎰 ロイヤルカジノ 🎰</h1>
+<h1>ロイヤルカジノ </h1>
 <div id="login" class="box"><div class="c">ニックネームを入力して参加</div><input id="nm" maxlength="12" placeholder="ニックネーム"><button style="width:100%" onclick="login()">参加する</button><div class="sm c">同じ名前で入ると所持金が引き継がれます</div></div>
 <div id="app" hidden>
 <div class="box" id="top"><div><div id="who"></div><div class="mny" id="mny"></div></div><div><button class="s" id="admbtn" hidden onclick="openAdm()">操作室</button><button class="s" onclick="logout()">退出</button></div></div>
@@ -58,7 +58,7 @@ button.s{background:linear-gradient(#2c6a50,#1b4a37);box-shadow:0 3px 0 #0a2418,
 </div>
 
 <div id="adm" hidden><div class="box" style="max-width:560px;margin:auto">
-<div style="display:flex;justify-content:space-between"><b>🔧 操作室</b><button class="s" onclick="$('#adm').hidden=true">閉じる</button></div>
+<div style="display:flex;justify-content:space-between"><b>操作室</b><button class="s" onclick="$('#adm').hidden=true">閉じる</button></div>
 <div id="adin"><input id="pw" type="password" placeholder="パスワード" inputmode="numeric"><button style="width:100%" onclick="chk()">入室</button></div>
 <div id="adbody" hidden><b>ゲーム設定</b><div id="cf"></div><button onclick="saveCfg()">設定を保存</button><hr><b>プレイヤーの所持金</b><div class="sm" id="ownnote"></div><div id="pl"></div></div></div></div>
 <div id="toast"></div>
@@ -69,7 +69,7 @@ const E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"
 const hex=s=>[...new TextEncoder().encode(s)].map(b=>b.toString(16).padStart(2,'0')).join('');
 const ADMIN=['ぱろ','パロ','りゅうが','リュウガ'],OWNER=['ぱろ','パロ'];
 const DEF={start:10000,slot:8,pachi:6,roul:0,bj:0,poker:0};
-const K=[['start','初期所持金(円・新規のみ)'],['slot','スロット 当たり確率(%)'],['pachi','パチンコ 当たり確率(%)'],['roul','ルーレット 有利補正(%)'],['bj','ブラックジャック 有利補正(%)'],['poker','ポーカー ドロー改善(%)']];
+const K=[['start','初期所持金(C・新規のみ)'],['slot','スロット 当たり確率(%)'],['pachi','パチンコ 当たり確率(%)'],['roul','ルーレット 有利補正(%)'],['bj','ブラックジャック 有利補正(%)'],['poker','ポーカー ドロー改善(%)']];
 let db=null,me=null,pid='',cfg={...DEF},busy=0,cur=0;
 const dbp=Promise.race([(async()=>{try{return await window.claude.use('db')}catch(e){return null}})(),sleep(2500).then(()=>null)]);
 const tmo=(p,ms=3000)=>Promise.race([p,sleep(ms).then(()=>{throw new Error('timeout')})]);
@@ -80,35 +80,35 @@ async function set(p,d){L.set(p,d);if(db){tmo(db.doc(p).set(d)).catch(()=>toast(
 async function list(){if(db){try{return(await tmo(db.collection('players').get())).docs.map(d=>d.data())}catch(e){}}
  const o=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('cz:players/'))o.push(JSON.parse(localStorage.getItem(k)))}}catch(e){}return o}
 async function sync(){const p=await get('players/'+pid);if(p)me.money=p.money;cfg={...DEF,...(await get('cfg/main'))};upd()}
-function upd(){$('#mny').textContent='💰 '+Math.floor(me.money).toLocaleString()+' 円'}
+function upd(){$('#mny').textContent=''+Math.floor(me.money).toLocaleString()+' C'}
 async function add(n){me.money+=n;upd();await set('players/'+pid,{name:me.name,money:me.money})}
 async function login(n){n=(typeof n=='string'?n:$('#nm').value).trim();if(!n)return toast('名前を入力してください');
  try{await login_(n)}catch(e){toast('エラー: '+e.message)}}
 async function login_(n){toast('接続中…');
  db=await dbp;pid=hex(n);cfg={...DEF,...(await get('cfg/main'))};let p=await get('players/'+pid);
  if(!p){p={name:n,money:cfg.start};await set('players/'+pid,p)}me={name:n,money:p.money};L.set('last',n);
- $('#login').hidden=true;$('#app').hidden=false;$('#who').textContent='👤 '+n;$('#admbtn').hidden=!ADMIN.includes(n);upd();tab('slot')}
+ $('#login').hidden=true;$('#app').hidden=false;$('#who').textContent=''+n;$('#admbtn').hidden=!ADMIN.includes(n);upd();tab('lobby')}
 function logout(){me=null;$('#app').hidden=true;$('#login').hidden=false}
 const lastN=L.get('last');if(lastN)$('#nm').value=lastN;
 function tab(t){['slot','pachi','roul','bj','pk'].forEach(x=>$('#'+x).hidden=x!=t)}
 function sb(n){$('#bet').value=Math.max(1,Math.floor(n))}
 async function start(){if(busy)return 0;busy=1;await sync();const b=Math.floor(+$('#bet').value);
  if(!(b>0)||b>me.money){toast('賭け金が不正か所持金不足です');busy=0;return 0}cur=b;await add(-b);return 1}
-async function fin(id,w,t){if(w>0)await add(cur*w);const e=$('#m-'+id);e.className='msg '+(w>0?'win':'lose');e.textContent=t+(w>0?`　+${Math.floor(cur*w).toLocaleString()}円`:'');busy=0}
+async function fin(id,w,t){if(w>0)await add(cur*w);const e=$('#m-'+id);e.className='msg '+(w>0?'win':'lose');e.textContent=t+(w>0?`　+${Math.floor(cur*w).toLocaleString()}C`:'');busy=0}
 /* スロット */
 const SY=['🍒','🍋','🔔','⭐','💎','7️⃣'],SP=[5,8,15,25,50,100],SW=[30,25,18,13,9,5];
 async function slot(){if(!await start())return;let res;
  if(R(10000)<cfg.slot*100){let r=R(100),i=0;while(r>=SW[i]){r-=SW[i];i++}res=[i,i,i]}else{do res=[R(6),R(6),R(6)];while(res[0]==res[1]&&res[1]==res[2])}
  const el=$$('#slot .reel');for(let k=0;k<3;k++){for(let t=0;t<8+k*5;t++){el.forEach((e,j)=>{if(j>=k)e.textContent=SY[R(6)]});await sleep(60)}el[k].textContent=SY[res[k]]}
  let w=0;if(res[0]==res[1]&&res[1]==res[2])w=SP[res[0]];else if(res.filter(x=>!x).length>=2)w=2;
- await fin('slot',w,w>=25?'🎉 大当たり！！':w?'当たり！':'はずれ')}
+ await fin('slot',w,w>=25?'大当たり！！':w?'当たり！':'はずれ')}
 /* パチンコ */
 let kk=0;
 async function pachi(){if(!await start())return;const hit=R(10000)<cfg.pachi*100*(kk>0?5:1);let d;
  if(hit){const x=1+R(9);d=[x,x,x]}else{const a=1+R(9);d=R(3)?[1+R(9),1+R(9),1+R(9)]:[a,a,a%9+1];if(d[0]==d[1]&&d[1]==d[2])d[2]=d[2]%9+1}
  const el=$$('#pachi .dg');for(let k=0;k<3;k++){for(let t=0;t<10+k*8;t++){el.forEach((e,j)=>{if(j>=k)e.textContent=1+R(9)});await sleep(55)}el[k].textContent=d[k]}
- let w=0,t='はずれ';if(hit){w=d[0]==7?30:10;kk=d[0]==7?6:3;t=d[0]==7?'🔥 777 大当たり＆確変突入！':'🎉 大当たり！'}else{kk=Math.max(0,kk-1);if(d[0]==d[1])t='惜しい！リーチ外れ'}
- $('#kk').textContent=kk>0?`🔥 確変中 残り${kk}回`:'';await fin('pachi',w,t)}
+ let w=0,t='はずれ';if(hit){w=d[0]==7?30:10;kk=d[0]==7?6:3;t=d[0]==7?'777 大当たり＆確変突入！':'大当たり！'}else{kk=Math.max(0,kk-1);if(d[0]==d[1])t='惜しい！リーチ外れ'}
+ $('#kk').textContent=kk>0?`確変中 残り${kk}回`:'';await fin('pachi',w,t)}
 /* ルーレット */
 const RED=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]),cl=n=>n?RED.has(n)?'r':'b':'g';
 const win=(t,v,n)=>t=='n'?n==v:n>0&&(t=='r'?RED.has(n):t=='b'?!RED.has(n):t=='e'?n%2==0:t=='o'?n%2==1:t=='l'?n<=18:n>=19);
@@ -119,7 +119,7 @@ async function roul(){const t=$('#rt').value,v=+$('#rn').value;if(t=='n'&&!(Numb
 /* カード共通 */
 const SU=['♠','♥','♦','♣'],RK=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const deck=()=>{const d=[];SU.forEach(s=>RK.forEach(r=>d.push({r,s})));return d.sort(()=>Math.random()-.5)};
-const cd=(c,x='',i='')=>c?`<span class="cd ${'♥♦'.includes(c.s)?'rd':''} ${x}" ${i}>${c.r}${c.s}</span>`:'<span class="cd">？</span>';
+const cd=(c,x='',i='')=>c?`<span class="pc ${'♥♦'.includes(c.s)?'rd':''} ${x}" ${i}><b>${c.r}<br>${c.s}</b><em>${c.s}</em></span>`:'<span class="pc bk"></span>';
 /* ブラックジャック */
 const B={on:0};
 const val=h=>{let t=0,a=0;h.forEach(c=>{t+=c.r=='A'?(a++,11):'JQK'.includes(c.r)?10:+c.r});while(t>21&&a>0){t-=10;a--}return t};
@@ -131,7 +131,7 @@ function bjHit(){B.p.push(B.dk.pop());if(val(B.p)>21)bjEnd('bust');else bjDraw()
 function bjStand(){bjEnd('st')}
 async function bjEnd(k){B.on=0;let w=0,t;const pv=val(B.p);
  if(k=='bust')t='バスト…';
- else if(k=='bj'){if(val(B.d)==21){w=1;t='お互いBJ 引き分け'}else{w=2.5;t='🎉 ブラックジャック！'}}
+ else if(k=='bj'){if(val(B.d)==21){w=1;t='お互いBJ 引き分け'}else{w=2.5;t='ブラックジャック！'}}
  else{const play=(dk,h)=>{while(val(h)<17)h.push(dk.pop());return h};let h=play(B.dk,[...B.d]);
   if(val(h)<=21&&val(h)>pv&&R(10000)<cfg.bj*100)h=play(deck(),[...B.d]);B.d=h;const dv=val(h);
   if(dv>21||pv>dv){w=2;t='勝ち！'}else if(pv==dv){w=1;t='引き分け'}else t='負け…'}
@@ -165,11 +165,11 @@ let AC=null,mute=false;
 function tone(f,d,t=0,ty='sine',v=.15){if(mute)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();AC.resume();const o=AC.createOscillator(),g=AC.createGain(),s=AC.currentTime+t;o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,s);g.gain.exponentialRampToValueAtTime(.001,s+d);o.connect(g);g.connect(AC.destination);o.start(s);o.stop(s+d)}catch(e){}}
 const snd=w=>w?[523,659,784,1047].forEach((f,i)=>tone(f,.25,i*.09,'triangle')):tone(150,.35,0,'sawtooth',.08);
 document.addEventListener('click',e=>{if(e.target.closest('button'))tone(660,.05,0,'square',.04)});
-$('#top>div:last-child').insertAdjacentHTML('afterbegin','<button class="s" onclick="mute=!mute;this.textContent=mute?\'🔇\':\'🔊\'">🔊</button>');
-function big(t,a){const o=document.createElement('div');o.id='bigwin';o.innerHTML=`<div>${t}</div><div style="font-size:30px">+${a}円</div>`+Array.from({length:26},()=>`<i class="cf" style="left:${R(96)}%;animation-delay:${R(900)}ms">${['🪙','💰','✨','🎉'][R(4)]}</i>`).join('');document.body.append(o);setTimeout(()=>o.remove(),2500)}
-async function fin(id,w,t){if(w>0)await add(cur*w);const e=$('#m-'+id);e.className='msg '+(w>0?'win':'lose');e.textContent=t+(w>0?`　+${Math.floor(cur*w).toLocaleString()}円`:'');busy=0;snd(w>0);if(w>=10)big('BIG WIN!!',Math.floor(cur*w).toLocaleString())}
+$('#top>div:last-child').insertAdjacentHTML('afterbegin','<button class="s" onclick="mute=!mute;this.textContent=mute?\'MUTE\':\'SND\'">SND</button>');
+function big(t,a){const o=document.createElement('div');o.id='bigwin';o.innerHTML=`<div>${t}</div><div style="font-size:30px">+${a}C</div>`+Array.from({length:26},()=>`<i class="cf" style="left:${R(96)}%;animation-delay:${R(900)}ms">${['✦','✦','✦','✦'][R(4)]}</i>`).join('');document.body.append(o);setTimeout(()=>o.remove(),2500)}
+async function fin(id,w,t){if(w>0)await add(cur*w);const e=$('#m-'+id);e.className='msg '+(w>0?'win':'lose');e.textContent=t+(w>0?`　+${Math.floor(cur*w).toLocaleString()}C`:'');busy=0;snd(w>0);if(w>=10)big('BIG WIN!!',Math.floor(cur*w).toLocaleString())}
 let shown=0;
-function upd(){const to=Math.floor(me.money),from=shown,t0=performance.now();(function f(n){const k=Math.min(1,(n-t0)/500);shown=Math.round(from+(to-from)*k);$('#mny').textContent='💰 '+shown.toLocaleString()+' 円';if(k<1)requestAnimationFrame(f)})(t0)}
+function upd(){const to=Math.floor(me.money),from=shown,t0=performance.now();(function f(n){const k=Math.min(1,(n-t0)/500);shown=Math.round(from+(to-from)*k);$('#mny').textContent=''+shown.toLocaleString()+' C';if(k<1)requestAnimationFrame(f)})(t0)}
 /* ルーレット：実物ホイール */
 const WO=[0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26],WC={r:'#b3201a',b:'#151515',g:'#14803c'};let wrot=0;
 $('#rnum').insertAdjacentHTML('beforebegin','<canvas id="wh" width="260" height="260" style="display:block;margin:4px auto;max-width:100%"></canvas>');
@@ -183,17 +183,17 @@ wheel(0);
 async function roul(){const bt=$('#rt').value,v=+$('#rn').value;if(bt=='n'&&!(Number.isInteger(v)&&v>=0&&v<=36))return toast('数字は0〜36で入力してください');
  if(!await start())return;let n=R(37);if(!win(bt,v,n)&&R(10000)<cfg.roul*100){const c=[...Array(37).keys()].filter(x=>win(bt,v,x));n=c[R(c.length)]}
  const P2=2*Math.PI,idx=WO.indexOf(n),from=wrot%P2,d=(((-idx*P2/37-from)%P2)+P2)%P2,to=from+10*Math.PI+d,t0=performance.now();let last=0;
- await new Promise(r=>{(function f(now){const k=Math.min(1,(now-t0)/3800);wrot=from+(to-from)*(1-Math.pow(1-k,3));wheel(wrot);const s=Math.floor(wrot/(P2/37));if(s!=last){last=s;tone(900,.03,0,'square',.03)}k<1?requestAnimationFrame(f):r()})(t0)});
+ await new Promise(r=>{(function f(now){const k=Math.min(1,(now-t0)/3800);wrot=from+(to-from)*(1-Math.pow(1-k,3));const e2=1-Math.pow(1-k,3);wheel(wrot,-(1-e2)*P2*7,130-21-(k>.7?(k-.7)/.3*17:0));const s=Math.floor(wrot/(P2/37));if(s!=last){last=s;tone(900,.03,0,'square',.03)}k<1?requestAnimationFrame(f):r()})(t0)});
  wrot=to;const e=$('#rnum');e.textContent=n;e.className='rn '+cl(n);const w=win(bt,v,n)?(bt=='n'?36:2):0;await fin('roul',w,(w?'的中！ ':'ハズレ ')+n)}
 /* ブラックジャック：ダブルダウン */
 $('#bst').insertAdjacentHTML('afterend','<button id="bdb" onclick="bjDbl()" disabled>ダブル</button>');
 const _bd=bjDraw;bjDraw=function(){_bd();$('#bdb').disabled=!(B.on&&B.p.length==2&&me.money>=cur)};
 async function bjDbl(){if(!B.on||B.p.length!=2||me.money<cur)return toast('ダブルできません');await add(-cur);cur*=2;B.p.push(B.dk.pop());bjEnd(val(B.p)>21?'bust':'st')}
 /* ランキング */
-$('#tabs').insertAdjacentHTML('beforeend','<button onclick="tab(\'rank\')">🏆ランキング</button>');
+$('#tabs').insertAdjacentHTML('beforeend','<button onclick="tab(\'rank\')">ランキング</button>');
 $('#app').insertAdjacentHTML('beforeend','<div class="box" id="rank" hidden></div>');
 function tab(t){['slot','pachi','roul','bj','pk','rank'].forEach(x=>$('#'+x).hidden=x!=t);if(t=='rank')rk()}
-async function rk(){const ps=(await list()).sort((a,b)=>b.money-a.money).slice(0,10);$('#rank').innerHTML='<b>🏆 所持金ランキング</b>'+ps.map((p,i)=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #fff2"><span>${['🥇','🥈','🥉'][i]||(i+1)+'.'} ${E(p.name)}</span><b>${Math.floor(p.money).toLocaleString()}円</b></div>`).join('')}
+async function rk(){const ps=(await list()).sort((a,b)=>b.money-a.money).slice(0,10);$('#rank').innerHTML='<b>所持金ランキング</b>'+ps.map((p,i)=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #fff2"><span>${(i+1)+'.'} ${E(p.name)}</span><b>${Math.floor(p.money).toLocaleString()}C</b></div>`).join('')}
 
 /* ===== Firebase Realtime Database (REST) : ログイン不要の共有保存 ===== */
 const U=p=>DB_URL.replace(/\/$/,'')+'/'+p+'.json';
@@ -202,23 +202,45 @@ async function set(p,d){L.set(p,d);if(DB_URL){tmo(fetch(U(p),{method:'PUT',body:
 async function list(){if(DB_URL){try{const r=await tmo(fetch(U('players')));const d=await r.json();return d?Object.values(d):[]}catch(e){}}
  const o=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('cz:players/'))o.push(JSON.parse(localStorage.getItem(k)))}}catch(e){}return o}
 if(!DB_URL)setTimeout(()=>toast('DB_URL未設定：この端末内のみ保存'),500);
+/* ===== v5: GRAND SALON ===== */
+document.body.insertAdjacentHTML('afterbegin','<svg width="0" height="0" style="position:absolute"><defs><radialGradient id="gR" cx=".35" cy=".3"><stop offset="0" stop-color="#ff7a6a"/><stop offset="1" stop-color="#8a0f1a"/></radialGradient><radialGradient id="gY" cx=".4" cy=".3"><stop offset="0" stop-color="#fff39a"/><stop offset="1" stop-color="#d9a400"/></radialGradient><linearGradient id="gG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f6e3a1"/><stop offset=".5" stop-color="#b89a58"/><stop offset="1" stop-color="#7a5f26"/></linearGradient><linearGradient id="gB" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#cfeaff"/><stop offset="1" stop-color="#2a6fc0"/></linearGradient></defs></svg>');
+const SVGS={cherry:'<circle cx="19" cy="42" r="10" fill="url(#gR)"/><circle cx="41" cy="42" r="10" fill="url(#gR)"/><path d="M19 32Q26 10 44 8M41 32Q41 18 44 8" stroke="#3a6b2a" stroke-width="3" fill="none"/>',lemon:'<ellipse cx="30" cy="32" rx="24" ry="16" fill="url(#gY)"/><path d="M6 32l-4-3M54 32l4-3" stroke="#a88a10" stroke-width="3"/>',bell:'<path d="M30 8C16 10 14 26 12 40H48C46 26 44 10 30 8Z" fill="url(#gG)"/><circle cx="30" cy="47" r="5" fill="url(#gG)"/>',star:'<polygon points="30,6 37,23 56,24 41,36 46,54 30,44 14,54 19,36 4,24 23,23" fill="url(#gG)"/>',diamond:'<polygon points="14,14 46,14 56,26 30,54 4,26" fill="url(#gB)" stroke="#dff" stroke-width="1.5"/><path d="M4 26H56M20 14L30 54M40 14L30 54" stroke="#9cf" fill="none"/>',seven:'<text x="30" y="50" text-anchor="middle" font-family="Georgia,serif" font-weight="900" font-size="54" fill="url(#gR)" stroke="#f0cf7a" stroke-width="2">7</text>',melon:'<circle cx="30" cy="32" r="22" fill="#2f8f3a"/><path d="M30 10V54M14 18Q30 32 14 46M46 18Q30 32 46 46" stroke="#a8e6a8" stroke-width="2" fill="none"/>',bar:'<rect x="4" y="16" width="52" height="28" rx="4" fill="#111" stroke="url(#gG)" stroke-width="3"/><text x="30" y="38" text-anchor="middle" font-family="Georgia,serif" font-weight="900" font-size="18" fill="url(#gG)">BAR</text>',replay:'<path d="M12 30A18 18 0 0 1 46 20M48 30A18 18 0 0 1 14 40" stroke="url(#gB)" stroke-width="6" fill="none"/><path d="M48 10V24H34M12 50V36H26" fill="none" stroke="url(#gB)" stroke-width="6"/>'};
+const sv=(k,s=46)=>`<svg viewBox="0 0 60 60" width="${s}" height="${s}" style="vertical-align:middle">${SVGS[k]}</svg>`;
+document.head.insertAdjacentHTML('beforeend',`<style>
+body{background:radial-gradient(ellipse at 50% 0,#1b221e 0,#101311 60%,#0a0c0b 100%) fixed;color:#f1ebdd}
+.box{background:linear-gradient(#171b19,#101311);border:1px solid #b89a5833}
+.box.g{background:repeating-linear-gradient(45deg,#ffffff04 0 2px,#0000 2px 4px),radial-gradient(ellipse at 50% 35%,#13604a 0,#0c4938 62%,#07301f 100%);border:0;box-shadow:inset 0 0 70px #000b,0 0 0 7px #3b2414,0 0 0 8px #b89a5899,0 16px 34px #000c}
+#slot.box.g,#pachi.box.g{background:linear-gradient(#2a1014,#651f2a33 40%,#14090b);box-shadow:inset 0 0 40px #000,0 0 0 6px #2b2b2b,0 0 0 7px #b89a58,0 16px 34px #000c}
+button{background:linear-gradient(#d8c38d,#8f7440);color:#16110a;box-shadow:0 2px 0 #4a3a18,0 6px 14px #000a}
+h1{color:#b89a58}.mny{color:#e3cf9a}#tabs{display:none}#top button{padding:8px 9px;font-size:12px}.cf{color:#d9c27a}
+.lt{font:400 12px Georgia,serif;letter-spacing:.4em;color:#b89a58;text-align:center;margin:6px 0 10px}
+.gc{display:flex;gap:12px;align-items:center;background:linear-gradient(135deg,#1b211e,#101311);border:1px solid #b89a5844;border-radius:6px;padding:12px;margin:10px 0;box-shadow:0 8px 22px #000a;cursor:pointer;transition:transform .15s,border-color .15s}
+.gc:active{transform:scale(.98);border-color:#b89a58}.gc h3{margin:0 0 4px;font:400 17px Georgia,serif;letter-spacing:.2em;color:#e3cf9a}.gc p{margin:0;font-size:12px;opacity:.75;line-height:1.5}
+.art{min-width:96px;height:74px;display:flex;align-items:center;justify-content:center;background:radial-gradient(#0f5a43,#07301f);border-radius:4px;box-shadow:inset 0 0 18px #000}
+.art .pc{width:34px;height:50px;margin:0 -9px;animation:none}.art .pc em{font-size:20px}.art .pc b{font-size:10px}
+.wl{width:64px;height:64px;border-radius:50%;border:5px solid #5a3515;background:radial-gradient(circle,#b89a58 0 14%,#0000 15%),repeating-conic-gradient(#a01c1c 0 9.7deg,#0e0e0e 9.7deg 19.4deg)}
+.ht{width:100%;font-size:12px;border-collapse:collapse;margin-top:8px}.ht td,.ht th{padding:6px 3px;border-bottom:1px solid #fff1;text-align:right}.ht td:first-child,.ht th:first-child{text-align:left}
+</style>`);
+document.body.insertAdjacentHTML('afterbegin','<svg width="0" height="0" style="position:absolute"><defs><linearGradient id="gS" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbfaf5"/><stop offset=".6" stop-color="#b9c0c8"/><stop offset="1" stop-color="#6d7680"/></linearGradient><linearGradient id="gK" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4a4a4a"/><stop offset="1" stop-color="#0b0b0b"/></linearGradient></defs></svg>');
+Object.assign(SVGS,{spade:'<path d="M30 6C30 6 8 26 8 38a11 11 0 0 0 19 7q-1 7-6 11h18q-5-4-6-11a11 11 0 0 0 19-7C52 26 30 6 30 6z" fill="url(#gK)" stroke="url(#gG)" stroke-width="2.5"/>',heart:'<path d="M30 54C6 38 6 12 19 10c6 0 10 4 11 9 1-5 5-9 11-9 13 2 13 28-11 44z" fill="url(#gR)" stroke="url(#gG)" stroke-width="2.5"/>',club:'<g fill="url(#gK)" stroke="url(#gG)" stroke-width="2.5"><circle cx="30" cy="18" r="11"/><circle cx="17" cy="37" r="11"/><circle cx="43" cy="37" r="11"/><path d="M30 34 24 55H36z"/></g>',dsuit:'<polygon points="30,5 53,30 30,55 7,30" fill="url(#gR)" stroke="url(#gG)" stroke-width="2.5"/>',crown:'<path d="M9 46 7 17 21 30 30 11 39 30 53 17 51 46Z" fill="url(#gG)" stroke="#5a4310" stroke-width="1.5"/><rect x="9" y="47" width="42" height="7" fill="url(#gG)"/><circle cx="30" cy="38" r="3.5" fill="#8a0f1a"/><circle cx="19" cy="40" r="2.5" fill="#1f5fa0"/><circle cx="41" cy="40" r="2.5" fill="#1f5fa0"/>',coin:'<circle cx="30" cy="30" r="25" fill="url(#gG)" stroke="#5a4310" stroke-width="2"/><circle cx="30" cy="30" r="19" fill="none" stroke="#6b5420" stroke-width="2"/><text x="30" y="39" text-anchor="middle" font-family="Georgia,serif" font-weight="700" font-size="26" fill="#6b5420">C</text>',gem:'<polygon points="14,14 46,14 56,26 30,54 4,26" fill="url(#gS)" stroke="#fff" stroke-width="1.5"/><path d="M4 26H56M20 14 30 54M40 14 30 54M14 14 24 26 30 14 36 26 46 14" stroke="#8a95a0" fill="none"/>'});
+const SV1=['spade','heart','crown','coin','gem','seven'].map(k=>sv(k)),SV2=['club','dsuit','crown','bar','seven','replay'].map(k=>sv(k));
 /* ===== v3: 目押しスロット・パチスロ / NPC同席ブラックジャック ===== */
 document.head.insertAdjacentHTML('beforeend','<style>.rl{position:relative;display:flex;justify-content:center;gap:6px;margin:8px 0}.rw{width:86px;height:198px;overflow:hidden;background:linear-gradient(90deg,#bbb,#fff 30%,#fff 70%,#bbb);border:3px solid #e8c14a;border-radius:8px;box-shadow:inset 0 0 14px #0008}.it{height:66px;line-height:66px;text-align:center;font-size:38px;font-weight:900;color:#111}.ln{position:absolute;left:8%;right:8%;top:50%;height:3px;background:#e33;box-shadow:0 0 8px #f00;pointer-events:none}#tabs button{min-width:30%}.stb{display:flex;gap:6px}.stc{flex:1;background:#0006;border-radius:10px;padding:6px;text-align:center;min-width:0}.stc .cd{font-size:13px;padding:4px 3px;min-width:28px}.stm{border:2px solid #e8c14a}</style>');
-const SL={},SLD={slot:{k:'slot',ts:'🍒 フルーツスロット',sy:['🍒','🍋','🔔','⭐','💎','7️⃣'],py:[5,8,15,25,50,100]},pachi:{k:'pachi',ts:'🎰 パチスロ（7揃いでボーナス）',sy:['🍒','🍉','🔔','BAR','7','🔄'],py:[5,6,10,30,60,1]}};
+const SL={},SLD={slot:{k:'slot',ts:'フルーツスロット',sy:SV1,nm:['スペード','ハート','クラウン','ゴールドコイン','ジェム','レッド7'],py:[5,8,15,25,50,100]},pachi:{k:'pachi',ts:'パチスロ（7揃いでボーナス）',sy:SV2,nm:['クラブ','ダイヤ','クラウン','BAR','7','リプレイ'],py:[5,6,10,30,60,1]}};
 function mkStrip(wt,k){const a=[];wt.forEach((w,i)=>{for(let j=0;j<w;j++)a.push(i)});let s=k*7+3;for(let i=a.length-1;i>0;i--){s=(s*1103515245+12345)&0x7fffffff;const j=s%(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
 function mkSlot(id){const d=SLD[id],N=20,H=66,st=[0,1,2].map(k=>mkStrip([4,4,3,3,3,3],k)),r=[0,1,2].map(()=>({p:R(N),m:0,t:0}));let flag=-1,boost=0,last=0,raf=0;
- $('#'+id).innerHTML=`<div class="c sm">${d.ts}</div><div class="rl">${[0,1,2].map(k=>`<div class="rw" onclick="SL.${id}.stop(${k})"><div id="${id}c${k}"></div></div>`).join('')}<i class="ln"></i></div><div class="msg" id="m-${id}">レバーを引いてリールを目押ししよう</div><div class="c"><button id="${id}lv" onclick="SL.${id}.lever()">🎰 レバー</button></div><div class="c">${['左','中','右'].map((x,k)=>`<button class="s" id="${id}b${k}" disabled onclick="SL.${id}.stop(${k})">${x}停止</button>`).join('')}</div><div class="sm c">ランプ点灯＝内部当選。狙った絵柄を中段に、押してから最大4コマ滑ります（リールをタップでも停止）</div>`;
+ $('#'+id).innerHTML=`<div class="c sm">${d.ts}</div><div class="rl">${[0,1,2].map(k=>`<div class="rw" onclick="SL.${id}.stop(${k})"><div id="${id}c${k}"></div></div>`).join('')}<i class="ln"></i></div><div class="msg" id="m-${id}">レバーを引いてリールを目押ししよう</div><div class="c"><button id="${id}lv" onclick="SL.${id}.lever()">レバー</button></div><div class="c">${['左','中','右'].map((x,k)=>`<button class="s" id="${id}b${k}" disabled onclick="SL.${id}.stop(${k})">${x}停止</button>`).join('')}</div><div class="sm c">ランプ点灯＝内部当選。狙った絵柄を中段に、押してから最大4コマ滑ります（リールをタップでも停止）</div>`;
  const cs=(pos,k)=>st[k][(((Math.round(pos)-1)%N)+N)%N];
  function draw(k){const q=r[k],b=Math.floor(q.p),f=q.p-b;let h='';for(let rr=-1;rr<=2;rr++)h+=`<div class="it" style="${d.sy[st[k][(((b-rr)%N)+N)%N]]=='7'?'color:#d11':''}">${d.sy[st[k][(((b-rr)%N)+N)%N]]}</div>`;const e=$('#'+id+'c'+k);e.style.transform=`translateY(${(f-1)*H}px)`;e.innerHTML=h}
  function check(){if(r.some(q=>q.m))return;const c=[0,1,2].map(k=>cs(r[k].p,k));let w=0,t='はずれ…';
-  if(c[0]==c[1]&&c[1]==c[2]){w=d.py[c[0]];t=d.sy[c[0]]+' 揃い！';if(d.k=='pachi'&&c[0]==4){boost=8;t+=' ボーナス突入！当たり率UP'}else if(boost>0)boost--}
-  else if(c[0]==0){w=2;t='🍒 チェリー！'}else{if(boost>0)boost--;if(flag>=0)t='当選を取りこぼした！目押しを磨こう'}
+  if(c[0]==c[1]&&c[1]==c[2]){w=d.py[c[0]];t=d.nm[c[0]]+' 揃い';if(d.k=='pachi'&&c[0]==4){boost=8;t+=' ボーナス突入！当たり率UP'}else if(boost>0)boost--}
+  else if(c[0]==0){w=2;t=d.nm[0]+' 単独'}else{if(boost>0)boost--;if(flag>=0)t='当選を取りこぼした！目押しを磨こう'}
   $('#'+id+'lv').disabled=false;fin(id,w,t+(boost>0?`（ボーナス残り${boost}G）`:''))}
  function loop(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;let any=0;r.forEach((q,k)=>{const mv=q.m;if(mv==1){q.p+=22*dt;any=1}else if(mv==2){q.p=Math.min(q.t,q.p+45*dt);if(q.p>=q.t){q.m=0;tone(500,.05,0,'square',.05);draw(k);check();return}any=1}if(mv)draw(k)});raf=any?requestAnimationFrame(loop):0}
  r.forEach((q,k)=>draw(k));
  SL[id]={async lever(){if(busy||r.some(q=>q.m))return;if(!await start())return;const key=cfg[d.k]*(boost>0?3:1);flag=-1;
    if(R(10000)<key*100){let x=R(100),i=0;while(x>=SW[i]){x-=SW[i];i++}flag=i}else if(R(100)<15)flag=-2;
-   $('#m-'+id).className='msg';$('#m-'+id).textContent=flag>=0?`🌟 ランプ点灯！ ${d.sy[flag]} を狙え！`:flag==-2?'🍒 チェリーのチャンス！左で狙え':'…';
+   $('#m-'+id).className='msg';$('#m-'+id).textContent=flag>=0?`ランプ点灯！ ${d.nm[flag]} を狙え！`:flag==-2?`${d.nm[0]} のチャンス！左で狙え`:'…';
    $('#'+id+'lv').disabled=true;[0,1,2].forEach(k=>{r[k].m=1;$('#'+id+'b'+k).disabled=false});tone(300,.1,0,'square',.06);if(!raf){last=performance.now();raf=requestAnimationFrame(loop)}},
   stop(k){const q=r[k];if(q.m!=1)return;const base=Math.ceil(q.p),o0=r.map((x,j)=>x.m==0?cs(x.p,j):x.m==2?cs(x.t,j):null);
    const bad=pos=>{const c=cs(pos,k),o=o0.slice();o[k]=c;return(o.every(v=>v!==null&&v==o[0])&&flag!=o[0])||(k==0&&c==0&&flag!=-2&&flag!=0)};
@@ -233,12 +255,12 @@ const T={dk:[],d:[],p:[],n:[],on:0,run:0,fin:0};
 $('#bj').innerHTML=`<div class="c sm">ブラックジャック（NPCと同卓・ディーラーは17でスタンド）</div><div class="c sm">ディーラー <b id="dv2"></b></div><div class="c" id="sd"></div><div class="stb" id="sn"></div><div class="c sm">あなた <b id="pv2"></b></div><div class="c" id="sp"></div><div class="msg" id="m-bj">ディールで開始。BJは×2.5</div><div class="c"><button id="bdeal" onclick="nDeal()">ディール</button><button id="bhit" onclick="nHit()" disabled>ヒット</button><button id="bst" onclick="nStand()" disabled>スタンド</button><button id="bdb" onclick="nDbl()" disabled>ダブル</button></div>`;
 function nDraw(){const f=T.fin;$('#sd').innerHTML=T.d.length?(f?T.d.map(c=>cd(c)).join(''):cd(T.d[0])+cd(null)):'';$('#dv2').textContent=f?val(T.d):'';
  $('#sp').innerHTML=T.p.map(c=>cd(c)).join('');$('#pv2').textContent=T.p.length?val(T.p):'';
- $('#sn').innerHTML=NP.map((x,i)=>{const h=(T.n[i]||{}).h||[],v=h.length?val(h):'',z=T.n[i]||{};return`<div class="stc ${z.act?'stm':''}"><b>${x.e}${x.n}</b><div class="sm">${Math.floor(x.bank).toLocaleString()}円${z.b?' 賭'+z.b:''}</div><div>${h.map(c=>cd(c)).join('')}</div><div class="sm">${v}${v>21?' バスト':''} ${z.res||''}</div></div>`}).join('');
+ $('#sn').innerHTML=NP.map((x,i)=>{const h=(T.n[i]||{}).h||[],v=h.length?val(h):'',z=T.n[i]||{};return`<div class="stc ${z.act?'stm':''}"><b>${x.n}</b><div class="sm" style="opacity:.6">${x.t||''}</div><div class="sm">${Math.floor(x.bank).toLocaleString()}C${z.b?' 賭'+z.b:''}</div><div>${h.map(c=>cd(c)).join('')}</div><div class="sm">${v}${v>21?' バスト':''} ${z.res||''}</div></div>`}).join('');
  $('#bdeal').disabled=!!T.run;['bhit','bst'].forEach(i=>$('#'+i).disabled=!T.on);$('#bdb').disabled=!(T.on&&T.p.length==2&&me.money>=cur)}
 function npcHit(x,v){const u=val([T.d[0]]);return x.s==0?(v<12||(v<17&&u>=7)):x.s==1?(v<=16||(v==17&&R(3)==0)):v<14}
 nDraw();
-async function nDeal(){if(!await start())return;T.run=1;T.fin=0;T.dk=deck();T.d=[T.dk.pop(),T.dk.pop()];T.p=[T.dk.pop(),T.dk.pop()];
- T.n=NP.map(x=>{if(x.bank<100)x.bank=3000;const b=Math.min(x.bank,[100,200,300,500][R(4)]);x.bank-=b;return{b,h:[T.dk.pop(),T.dk.pop()],res:'',act:0}});
+async function nDeal(){if(!await start())return;reseat();T.run=1;T.fin=0;T.dk=deck();T.d=[T.dk.pop(),T.dk.pop()];T.p=[T.dk.pop(),T.dk.pop()];
+ T.n=NP.map(x=>{if(x.bank<100)x.bank=3000;const b=Math.min(x.bank,(x.s==3?[500,1000,2000,3000]:[100,200,300,500])[R(4)]);x.bank-=b;return{b,h:[T.dk.pop(),T.dk.pop()],res:'',act:0}});
  $('#m-bj').textContent='';nDraw();await sleep(600);
  for(let i=0;i<3;i++){const z=T.n[i];z.act=1;nDraw();await sleep(500);while(val(z.h)<21&&npcHit(NP[i],val(z.h))){z.h.push(T.dk.pop());tone(700,.04,0,'square',.04);nDraw();await sleep(700)}z.act=0}
  T.on=1;nDraw();if(val(T.p)==21)nEnd('bj')}
@@ -250,8 +272,145 @@ async function nEnd(k){T.on=0;T.fin=1;nDraw();await sleep(500);const pv=val(T.p)
   if(k!='bust'&&val(T.d)<=21&&val(T.d)>pv&&R(10000)<cfg.bj*100){T.d=play(deck(),[T.d[0],T.d[1]]);nDraw()}}
  const dv=val(T.d),dn=T.d.length==2&&dv==21;
  T.n.forEach((z,i)=>{const v=val(z.h),nat=z.h.length==2&&v==21;let m=0;if(v>21)m=0;else if(nat)m=dn?1:2.5;else if(dv>21||v>dv)m=2;else if(v==dv)m=1;NP[i].bank+=z.b*m;z.res=m>1?`WIN +${Math.floor(z.b*(m-1))}`:m==1?'PUSH':'LOSE'});
- L.set('npc',NP.map(x=>x.bank));let w=0,t;
- if(k=='bust'){t='バスト…'}else if(k=='bj'){if(dn){w=1;t='お互いBJ 引き分け'}else{w=2.5;t='🎉 ブラックジャック！'}}
+ L.set('npc2',POOL.map(x=>x.bank));let w=0,t;
+ if(k=='bust'){t='バスト…'}else if(k=='bj'){if(dn){w=1;t='お互いBJ 引き分け'}else{w=2.5;t='ブラックジャック！'}}
  else if(dv>21||pv>dv){w=2;t='勝ち！'}else if(pv==dv){w=1;t='引き分け'}else t='負け…';
  T.run=0;nDraw();await fin('bj',w,t)}
+/* ===== v4: ROYAL CASINO 仕様（本物志向） ===== */
+document.head.insertAdjacentHTML('beforeend',`<style>
+body{background:radial-gradient(ellipse at 50% -10%,#3a0d14 0,#14090b 55%,#050303 100%) fixed;font-family:"Hiragino Mincho ProN","Yu Mincho",Georgia,serif;max-width:620px}
+h1{font-family:Georgia,serif;font-weight:400;letter-spacing:.38em;font-size:21px;color:#d8b25a;text-shadow:none;border-bottom:1px solid #d8b25a55;padding-bottom:10px;margin:8px 0 12px}
+.box{background:#120a0c;border:1px solid #d8b25a44;border-radius:4px;box-shadow:0 10px 30px #000a}
+.box.g{background:radial-gradient(ellipse at 50% 30%,#0f5a3a 0,#073823 70%,#04261a 100%);border:1px solid #d8b25a;box-shadow:inset 0 0 60px #000c,0 0 0 6px #1a0f0a,0 0 0 7px #d8b25a66,0 14px 30px #000b;margin:16px 7px}
+#slot.box.g,#pachi.box.g{background:linear-gradient(#3a0c14,#14060a)}
+button{background:linear-gradient(#e6c76e,#a8812f);color:#1a1000;border-radius:3px;letter-spacing:.08em;font-family:inherit;box-shadow:0 2px 0 #5a4310,0 6px 12px #0009}
+button.s{background:#1b1214;color:#d8b25a;border:1px solid #d8b25a66;box-shadow:none}
+#tabs button{background:transparent;color:#bba05c;border:0;border-bottom:2px solid #d8b25a33;box-shadow:none;border-radius:0;font-size:13px}
+.mny{font-family:Georgia,serif;color:#e6c76e;letter-spacing:.06em}.msg{font-style:italic;letter-spacing:.06em}
+.pc{display:inline-block;position:relative;width:46px;height:66px;background:#fbf8ef;border-radius:5px;margin:2px;box-shadow:0 3px 8px #000a;color:#111;font-family:Georgia,serif;vertical-align:top;animation:dl .35s both;cursor:default}
+.pc b{position:absolute;left:4px;top:3px;font-size:14px;line-height:1;text-align:center}.pc em{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:30px}
+.pc.rd{color:#b3141c}.pc.bk{background:repeating-linear-gradient(45deg,#7a1020 0 4px,#5a0b17 4px 8px);border:3px solid #fbf8ef}.pc.h{outline:2px solid #e6c76e;transform:translateY(-8px)}
+.stc .pc{width:32px;height:46px}.stc .pc em{font-size:19px}.stc .pc b{font-size:10px;left:3px}
+.ch{width:50px;height:50px;border-radius:50%;border:3px dashed #fffa;box-shadow:0 0 0 3px var(--c) inset,0 3px 6px #000a;background:var(--c);color:#fff;font:700 12px Georgia,serif;display:inline-flex;align-items:center;justify-content:center;margin:3px;cursor:pointer;transition:transform .1s}
+.ch.on{transform:translateY(-6px) scale(1.12);outline:2px solid #e6c76e;outline-offset:2px}
+.rt{display:grid;grid-template-columns:1.1fr repeat(12,1fr) 1.3fr;margin:8px 0;border:1px solid #d8b25a}
+.rc{border:1px solid #d8b25a77;text-align:center;font:700 13px Georgia,serif;padding:9px 0;position:relative;color:#fff;cursor:pointer}
+.rc.r{background:#a01c1c}.rc.b{background:#0e0e0e}.rc.z{background:#0b6a3a}.rc.o{font-size:11px;padding:10px 0}
+.mk{position:absolute;right:0;top:0;background:#fff;color:#000;border-radius:50%;min-width:17px;height:17px;font:700 9px/17px sans-serif;box-shadow:0 0 0 2px #e6c76e}
+</style>`);
+$('h1').textContent='ROYAL CASINO';
+$$('#tabs button').forEach((b,i)=>b.textContent=['スロット','パチスロ','ルーレット','ブラックジャック','ポーカー','ランキング'][i]);
+let chip=100;
+function pick(v){chip=v;sb(v);$$('.ch').forEach(e=>e.classList.toggle('on',+e.dataset.v==v))}
+$('#bet').closest('.box').innerHTML=`<div class="c">${[[100,'#2f5fc4'],[500,'#b3201a'],[1000,'#1f7a46'],[5000,'#1a1a1a'],[10000,'#6a2a9a']].map(([v,c])=>`<div class="ch ${v==100?'on':''}" data-v="${v}" style="--c:${c}" onclick="pick(${v})">${v>=1000?v/1000+'K':v}</div>`).join('')}</div><div class="c sm">BET <input id="bet" type="number" value="100" style="width:110px;text-align:center"> <button class="s" onclick="sb(me.money)">ALL IN</button></div>`;
+/* ルーレット：本物のベッティングテーブル */
+let RB={};
+const wn=(k,n)=>{const t=k[0],v=+k.slice(1);if(t=='n')return n==v;if(n==0)return false;if(t=='c')return n%3==v%3;if(k=='d1')return n<=12;if(k=='d2')return n>12&&n<25;if(k=='d3')return n>24;return k=='lo'?n<=18:k=='hi'?n>=19:k=='ev'?n%2==0:k=='od'?n%2==1:k=='rd'?RED.has(n):!RED.has(n)};
+const rsum=()=>Object.values(RB).reduce((a,b)=>a+b,0);
+const cell=(k,t,cls,st)=>`<div class="rc ${cls}" data-b="${k}" style="${st}" onclick="rb('${k}')">${t}</div>`;
+let tb=cell('n0','0','z','grid-column:1;grid-row:1/4');
+for(let n=1;n<=36;n++)tb+=cell('n'+n,n,RED.has(n)?'r':'b',`grid-column:${2+Math.floor((n-1)/3)};grid-row:${3-((n-1)%3)}`);
+[['c3','2:1',1],['c2','2:1',2],['c1','2:1',3]].forEach(([k,t,r])=>tb+=cell(k,t,'o',`grid-column:14;grid-row:${r}`));
+[['d1','1st 12'],['d2','2nd 12'],['d3','3rd 12']].forEach(([k,t],i)=>tb+=cell(k,t,'o',`grid-column:${2+i*4}/span 4;grid-row:4`));
+[['lo','1-18'],['ev','EVEN'],['rd','RED'],['bl','BLACK'],['od','ODD'],['hi','19-36']].forEach(([k,t],i)=>tb+=cell(k,t,k=='rd'?'r':k=='bl'?'b':'o',`grid-column:${2+i*2}/span 2;grid-row:5`));
+$('#roul').innerHTML=`<canvas id="wh" width="260" height="260" style="display:block;margin:4px auto;max-width:100%"></canvas><div class="rn g" id="rnum">0</div><div class="rt">${tb}</div><div class="msg" id="m-roul">チップを選んでテーブルに置き、スピンしてください</div><div class="c"><button onclick="rlSpin()">SPIN</button><button class="s" onclick="RB={};rbDraw()">クリア</button></div>`;
+wheel(wrot);
+function rbDraw(){$$('.rc').forEach(e=>{const a=RB[e.dataset.b],o=e.querySelector('.mk');if(o)o.remove();if(a)e.insertAdjacentHTML('beforeend',`<i class="mk">${a>=1000?a/1000+'K':a}</i>`)});$('#m-roul').className='msg';$('#m-roul').textContent=rsum()?`BET 合計 ${rsum().toLocaleString()}C`:'チップを置いてください'}
+function rb(k){if(busy)return;if(rsum()+chip>me.money)return toast('所持金が足りません');RB[k]=(RB[k]||0)+chip;tone(800,.04,0,'square',.04);rbDraw()}
+async function rlSpin(){if(busy)return;await sync();const tot=rsum();if(!tot)return toast('チップを置いてください');if(tot>(cfg.maxb||100000))return toast('最高賭け金を超えています');if(tot>me.money)return toast('所持金が足りません');busy=1;cur=tot;await add(-tot);
+ const ret=n=>Object.entries(RB).reduce((a,[k,v])=>a+(wn(k,n)?v*(k[0]=='n'?36:'cd'.includes(k[0])?3:2):0),0);
+ let n=R(37);if(ret(n)<tot&&R(10000)<cfg.roul*100){const c=[...Array(37).keys()].filter(x=>ret(x)>tot);if(c.length)n=c[R(c.length)]}
+ const P2=2*Math.PI,idx=WO.indexOf(n),from=wrot%P2,dd=(((-idx*P2/37-from)%P2)+P2)%P2,to=from+10*Math.PI+dd,t0=performance.now();let ls=0;
+ await new Promise(r=>{(function f(now){const k=Math.min(1,(now-t0)/4200);wrot=from+(to-from)*(1-Math.pow(1-k,3));const e2=1-Math.pow(1-k,3);wheel(wrot,-(1-e2)*P2*7,130-21-(k>.7?(k-.7)/.3*17:0));const s=Math.floor(wrot/(P2/37));if(s!=ls){ls=s;tone(900,.03,0,'square',.03)}k<1?requestAnimationFrame(f):r()})(t0)});wrot=to;
+ const e=$('#rnum');e.textContent=n;e.className='rn '+cl(n);const rt=ret(n);RB={};rbDraw();await fin('roul',rt/tot,`${n} ${n?(RED.has(n)?'RED':'BLACK'):'ZERO'} — ${rt>=tot?'的中':'ハズレ'}`)}
+const GN={slot:'スロット',pachi:'パチスロ',roul:'ルーレット',bj:'ブラックジャック',pk:'ポーカー'};
+DEF.minb=10;DEF.maxb=100000;K.push(['minb','最低賭け金(C)'],['maxb','最高賭け金(C)']);
+let VOL=.7;
+function tone(f,d,t=0,ty='sine',v=.15){if(mute)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();AC.resume();const o=AC.createOscillator(),g=AC.createGain(),s=AC.currentTime+t;o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v*VOL,s);g.gain.exponentialRampToValueAtTime(.0005,s+d);o.connect(g);g.connect(AC.destination);o.start(s);o.stop(s+d)}catch(e){}}
+async function start(){if(busy)return 0;busy=1;await sync();const b=Math.floor(+$('#bet').value),mn=cfg.minb||10,mx=cfg.maxb||100000;
+ if(!(b>0)||b<mn||b>mx||b>me.money){toast(b>me.money?'クレジットが不足しています':`賭け金は ${mn}〜${mx} C です`);busy=0;return 0}cur=b;await add(-b);return 1}
+async function hlog(g,b,p){const k='hist/'+pid;let h=(await get(k))||[];h=Array.isArray(h)?h:Object.values(h);h.unshift({g,b,p,bal:Math.floor(me.money),t:Date.now()});set(k,h.slice(0,40))}
+async function fin(id,w,t){const pay=Math.floor(cur*w);if(pay>0)await add(pay);const net=pay-cur,e=$('#m-'+id);e.className='msg '+(net>0?'win':net<0?'lose':'');
+ e.textContent=`${t} ｜ 払戻 ${pay.toLocaleString()}C ｜ 損益 ${net>0?'+':''}${net.toLocaleString()}C`;busy=0;hlog(id,cur,pay);snd(net>0);if(w>=10)big('BIG WIN',pay.toLocaleString())}
+async function hs(){let h=(await get('hist/'+pid))||[];h=Array.isArray(h)?h:Object.values(h);
+ $('#hist').innerHTML='<b style="letter-spacing:.2em">PLAY HISTORY</b>'+(h.length?'<table class="ht"><tr><th>GAME<th>賭け<th>払戻<th>損益<th>残高</tr>'+h.map(x=>{const n=x.p-x.b;return`<tr><td>${GN[x.g]||x.g}</td><td>${x.b.toLocaleString()}</td><td>${x.p.toLocaleString()}</td><td class="${n>0?'win':n<0?'lose':''}">${n>0?'+':''}${n.toLocaleString()}</td><td>${x.bal.toLocaleString()}</td></tr>`}).join('')+'</table>':'<div class="sm">まだ履歴がありません</div>')}
+/* ロビー */
+const gc=(k,t,s,a)=>`<div class="gc" onclick="tab('${k}')"><div class="art">${a}</div><div><h3>${t}</h3><p>${s}</p></div></div>`;
+const A=(r,s)=>cd({r,s});
+$('#tabs').insertAdjacentHTML('afterend',`<div id="lobby"><div class="lt">THE GRAND SALON</div>${
+ gc('roul','ROULETTE','ヨーロピアン・シングルゼロ。テーブルのどこにでも、何点でもチップを置けます。','<div class="wl"></div>')+
+ gc('bj','BLACKJACK','3人のNPCと同卓。ヒット、スタンド、ダブルダウン。ブラックジャックは3:2。',A('A','♠')+A('K','♥'))+
+ gc('slot','SLOTS','3リール・目押し機。内部当選ランプを頼りに、7を中段へ。',sv('seven',34)+sv('crown',34)+sv('seven',34))+
+ gc('pachi','PACHISLOT','7を揃えるとボーナス。8ゲームの間、当選確率が上昇します。',sv('bar',34)+sv('seven',34)+sv('bar',34))+
+ gc('pk','VIDEO POKER','ジャックス・オア・ベター。ロイヤルフラッシュは250倍。',A('10','♠')+A('J','♠')+A('Q','♠')+A('K','♠')+A('A','♠'))
+}</div><div class="box" id="hist" hidden></div>`);
+$('#bet').closest('.box').id='tray';
+$('#top>div:last-child').insertAdjacentHTML('afterbegin','<button class="s" onclick="tab(\'lobby\')">LOBBY</button><button class="s" onclick="tab(\'hist\')">履歴</button><button class="s" onclick="tab(\'rank\')">順位</button><input type="range" min="0" max="1" step=".1" value=".7" oninput="VOL=+this.value" style="width:60px;padding:0;vertical-align:middle">');
+function tab(t){['lobby','slot','pachi','roul','bj','pk','rank','hist'].forEach(x=>{const e=$('#'+x);if(e)e.hidden=x!=t});$('#tray').hidden=!GN[t];if(t=='rank')rk();if(t=='hist')hs();scrollTo(0,0)}
+tab('lobby');
+/* ルーレット：木製ホイールと独立した球 */
+function wheel(rot,ba,br){const cv=$('#wh'),x=cv.getContext('2d'),S=cv.width,c=S/2,a=2*Math.PI/37,R2=c-30;x.clearRect(0,0,S,S);
+ let g=x.createRadialGradient(c,c,c*.7,c,c,c);g.addColorStop(0,'#5a3515');g.addColorStop(.6,'#8a5a2b');g.addColorStop(1,'#2a1608');x.beginPath();x.arc(c,c,c-1,0,7);x.fillStyle=g;x.fill();
+ x.beginPath();x.arc(c,c,c-12,0,7);x.fillStyle='#161616';x.fill();x.strokeStyle='#b89a58';x.lineWidth=2;x.stroke();
+ x.save();x.translate(c,c);x.rotate(rot);
+ WO.forEach((n,i)=>{x.beginPath();x.moveTo(0,0);x.arc(0,0,R2,i*a-a/2-Math.PI/2,i*a+a/2-Math.PI/2);x.closePath();x.fillStyle=WC[cl(n)];x.fill();x.strokeStyle='#d9c27a';x.lineWidth=1;x.stroke();x.save();x.rotate(i*a);x.fillStyle='#f1ebdd';x.font='bold 10px Georgia';x.textAlign='center';x.fillText(n,0,-R2+13);x.restore()});
+ const cg=x.createRadialGradient(0,0,2,0,0,c*.4);cg.addColorStop(0,'#eadca0');cg.addColorStop(1,'#6b5420');x.beginPath();x.arc(0,0,c*.4,0,7);x.fillStyle=cg;x.fill();x.fillStyle='#2b1a0a';x.beginPath();x.arc(0,0,c*.12,0,7);x.fill();x.restore();
+ if(ba!==undefined){x.beginPath();x.arc(c+Math.sin(ba)*br,c-Math.cos(ba)*br,5,0,7);x.fillStyle='#f6f6f6';x.shadowColor='#000';x.shadowBlur=4;x.fill();x.shadowBlur=0}}
+wheel(wrot);
+/* v6: NPCプール */
+document.head.insertAdjacentHTML('beforeend','<style>.rw{background:linear-gradient(90deg,#a9a28c,#f4efe0 22%,#f4efe0 78%,#a9a28c)}</style>');
+const POOL=[['ルナ','堅実派',0],['ケン','強気',1],['ミミ','慎重派',2],['ヴィクター','常連',0],['サクラ','ツキ頼み',1],['黒田','大物',3],['エレナ','観光客',0],['ジャック','勝負師',1],['チャン','慎重派',2],['アデル','初心者',4],['ロイ','元ディーラー',0],['麗子','高額ベッター',3],['ハンス','常連',2],['ナオミ','堅実派',0]].map(([n,t,s])=>({n,t,s,bank:s==3?20000:5000}));
+{const nb=L.get('npc2')||[];POOL.forEach((x,i)=>{if(nb[i]>=100)x.bank=nb[i]})}
+function reseat(){NP.splice(0,NP.length,...[...POOL].sort(()=>Math.random()-.5).slice(0,3))}
+function npcHit(x,v){const u=val([T.d[0]]);return x.s==1?(v<=16||(v==17&&R(3)==0)):x.s==2?v<14:x.s==4?(v<=15||(v<19&&R(4)==0)):(v<12||(v<17&&u>=7))}
+reseat();nDraw();
+/* ===== v7: テキサスホールデム（ソロ／マルチ／観戦＆予想） ===== */
+const HS=['プリフロップ','フロップ','ターン','リバー'],HN=['ハイカード','ワンペア','ツーペア','スリーカード','ストレート','フラッシュ','フルハウス','フォーカード','ストレートフラッシュ'];
+function r5(h){const v=h.map(rv).sort((a,b)=>b-a),fl=h.every(c=>c.s==h[0].s),cn={};v.forEach(x=>cn[x]=(cn[x]||0)+1);
+ const g=Object.entries(cn).map(([k,c])=>[c,+k]).sort((a,b)=>b[0]-a[0]||b[1]-a[1]),wh=v.join()=='14,5,4,3,2',st=new Set(v).size==5&&(v[0]-v[4]==4||wh);
+ const cat=st&&fl?8:g[0][0]==4?7:g[0][0]==3&&g[1][0]==2?6:fl?5:st?4:g[0][0]==3?3:g[0][0]==2&&g[1][0]==2?2:g[0][0]==2?1:0,tb=st?[wh?5:v[0]]:g.map(x=>x[1]);
+ return cat*1e10+tb.reduce((a,x,i)=>a+x*Math.pow(15,4-i),0)}
+function bestN(c){if(c.length<5)return 0;let m=0;(function f(i,a){if(a.length==5){m=Math.max(m,r5(a));return}for(let j=i;j<c.length;j++)f(j+1,[...a,c[j]])})(0,[]);return m}
+GN.hold='テキサスホールデム';let RM=null,HK=null,hp=0;const rp=c=>'rooms/'+c,rget=c=>get(rp(c)),hcl=L.get('hcl')||{};
+$('#tabs').insertAdjacentHTML('afterend','<div class="box g" id="hold" hidden></div>');
+$('#lobby').insertAdjacentHTML('beforeend',gc('hold',"TEXAS HOLD'EM",'友達と対戦（マルチ）またはNPCとソロ。観戦者は勝者を予想して賭けられます。勝者がポットを総取り。',A('A','♠')+A('A','♥')));
+function tab(t){['lobby','slot','pachi','roul','bj','pk','hold','rank','hist'].forEach(x=>{const e=$('#'+x);if(e)e.hidden=x!=t});$('#tray').hidden=!GN[t];if(t=='rank')rk();if(t=='hist')hs();if(t=='hold')hMenu();scrollTo(0,0)}
+async function hMenu(){RM=null;if(!DB_URL)return void($('#hold').innerHTML='<div class="c">オンライン接続（DB_URL）が必要です</div>');
+ $('#hold').innerHTML=`<div class="c sm">TEXAS HOLD'EM ／ 参加費＝上のBET欄の金額</div><div class="c">人数 <select id="hn" style="width:80px">${[2,3,4,5,6].map(x=>`<option ${x==4?'selected':''}>${x}</option>`).join('')}</select></div><div class="c"><button onclick="hCreate(0)">ソロで遊ぶ</button><button onclick="hCreate(1)">マルチ部屋を作る</button></div><div class="lt">OPEN ROOMS</div><div id="hl"></div>`;
+ const all=(await get('rooms'))||{};$('#hl').innerHTML=Object.entries(all).filter(([c,r])=>r&&r.core&&r.core.mu&&r.core.st!='done'&&Date.now()-r.core.t<7200000).map(([c,r])=>`<div class="gc" style="padding:8px" onclick="RM='${c}';hPoll()"><div><h3 style="font-size:14px">${E(r.core.hn)} の部屋 #${c}</h3><p>${r.core.n}人 ・ 参加費 ${r.core.ante}C ・ ${r.core.st=='wait'?'募集中（参加／観戦）':'進行中（観戦可）'}</p></div></div>`).join('')||'<div class="sm c">開催中の部屋はありません</div>'}
+async function hCreate(mu){const n=+$('#hn').value,ante=Math.floor(+$('#bet').value);if(!(ante>=(cfg.minb||10))||ante>me.money||ante>(cfg.maxb||100000))return toast('参加費が不正か、クレジット不足です');
+ const c=String(1000+R(9000));await add(-ante);await set(rp(c)+'/core',{host:pid,hn:me.name,mu,n,ante,st:'wait',rd:1,t:Date.now()});await set(rp(c)+'/joins/'+pid,{n:me.name,t:Date.now(),rd:1});RM=c;if(!mu)await hostStart(c);hPoll()}
+async function hostStart(c){const r=await rget(c),k=r.core,hu=Object.entries(r.joins||{}).filter(([p,j])=>j.rd==k.rd).sort((a,b)=>a[1].t-b[1].t).map(([p,j])=>({p,n:j.n})),pl=[...POOL].sort(()=>Math.random()-.5),seats=hu.slice(0,k.n);
+ while(seats.length<k.n){const x=pl.pop();seats.push({p:'npc'+seats.length,n:x.n,npc:1})}const dk=deck();
+ await set(rp(c)+'/core',{...k,seats,hands:seats.map(()=>[dk.pop(),dk.pop()]),dk,board:[],alive:seats.map(()=>1),ac:seats.map(()=>0),cur:0,street:0,st:'play',pot:k.ante*seats.length,win:[],t:Date.now()})}
+async function hostTick(c,r){const k=r.core;if(k.st!='play')return;const i=k.cur,s=k.seats[i];let v=null;
+ if(s.npc){if(Date.now()-k.t<1300)return;const sc=bestN([...k.hands[i],...(k.board||[])]),hi=Math.max(...k.hands[i].map(rv));v=(k.street==0?(k.hands[i][0].r==k.hands[i][1].r||hi>=11||R(10)<4):(sc>=1e10||R(100)<35))?'c':'f'}
+ else{const a=(r.acts||{})[s.p];if(a&&a.rd==k.rd&&a.s==k.street)v=a.v;else if(Date.now()-k.t>45000)v='f';else return}
+ const q={...k,alive:[...k.alive],ac:[...k.ac],board:[...(k.board||[])]};if(v=='f')q.alive[i]=0;else q.pot+=q.ante;q.ac[i]=1;
+ if(q.alive.filter(x=>x).length==1)return hEnd(c,q);const nx=q.seats.findIndex((x,j)=>q.alive[j]&&!q.ac[j]);
+ if(nx>=0){q.cur=nx;q.t=Date.now();return set(rp(c)+'/core',q)}
+ q.street++;if(q.street>3)return hEnd(c,q);q.ac=q.seats.map(()=>0);const dk=[...q.dk];for(let z=0;z<(q.street==1?3:1);z++)q.board.push(dk.pop());q.dk=dk;q.cur=q.alive.indexOf(1);q.t=Date.now();await set(rp(c)+'/core',q)}
+async function hEnd(c,k){k.st='done';const al=k.seats.map((s,i)=>i).filter(i=>k.alive[i]);let w=al,d='他の全員がフォールド';
+ if(al.length>1){const sc=al.map(i=>bestN([...k.hands[i],...k.board])),m=Math.max(...sc);w=al.filter((i,j)=>sc[j]==m);d=HN[Math.floor(m/1e10)]}k.win=w;k.desc=d;k.t=Date.now();await set(rp(c)+'/core',k)}
+async function hAct(v){const k=HK;if(v=='c'){if(me.money<k.ante)return toast('クレジット不足です');await add(-k.ante)}await set(rp(RM)+'/acts/'+pid,{rd:k.rd,s:k.street,v});HK.cur=-1}
+async function hJoin(){await add(-HK.ante);await set(rp(RM)+'/joins/'+pid,{n:me.name,t:Date.now(),rd:HK.rd})}
+async function hBet(i){const a=Math.floor(+$('#bet').value);if(!(a>=(cfg.minb||10))||a>me.money||a>(cfg.maxb||100000))return toast('賭け金が不正か、クレジット不足です');await add(-a);await set(rp(RM)+'/spec/'+pid,{n:me.name,on:i,a,rd:HK.rd})}
+async function hNext(){const k=HK;if(!k.mu){RM=null;return hCreate(0)}if(me.money<k.ante)return toast('クレジット不足です');await add(-k.ante);
+ await set(rp(RM)+'/joins',null);await set(rp(RM)+'/spec',null);await set(rp(RM)+'/acts',null);await set(rp(RM)+'/core',{host:pid,hn:k.hn,mu:k.mu,n:k.n,ante:k.ante,st:'wait',rd:k.rd+1,t:Date.now()});await set(rp(RM)+'/joins/'+pid,{n:me.name,t:Date.now(),rd:k.rd+1})}
+function hClaim(r){const k=r.core;if(k.st!='done')return;const key=RM+'-'+k.rd;if(hcl[key])return;hcl[key]=1;L.set('hcl',hcl);const i=k.seats.findIndex(s=>s.p==pid),b=(r.spec||{})[pid];let tot=0;
+ if(i>=0&&k.win.includes(i))tot+=Math.floor(k.pot/k.win.length);
+ if(b&&b.rd==k.rd){const sp=Object.values(r.spec).filter(x=>x.rd==k.rd),pool=sp.reduce((a,x)=>a+x.a,0),wb=sp.filter(x=>k.win.includes(x.on)).reduce((a,x)=>a+x.a,0);tot+=wb>0?(k.win.includes(b.on)?Math.floor(b.a*pool/wb):0):b.a}
+ if(i>=0||(b&&b.rd==k.rd)){if(tot>0)add(tot);hlog('hold',i>=0?k.ante:b.a,tot);toast(tot>0?`獲得 +${tot.toLocaleString()}C`:'今回は獲得なし')}}
+function hRender(r){const k=r.core,mi=(k.seats||[]).findIndex(s=>s.p==pid),pl=k.st!='wait',js=Object.entries(r.joins||{}).filter(([p,j])=>j.rd==k.rd),sp=Object.entries(r.spec||{}).filter(([p,x])=>x.rd==k.rd),seated=pl?mi>=0:js.some(([p])=>p==pid);HK=k;
+ let h=`<div class="c sm">ROOM #${RM} ・ ${E(k.hn)} の部屋 ・ 参加費 ${k.ante}C ・ ${k.n}人${k.mu?'':'（ソロ）'}</div>`;
+ if(pl){h+=`<div class="c" style="margin:6px">${(k.board||[]).map(c=>cd(c)).join('')||'<span class="sm">ボード未公開</span>'}</div><div class="c">POT <b>${k.pot.toLocaleString()}C</b> ・ ${k.st=='done'?'結果':HS[Math.min(k.street,3)]}</div><div class="stb" style="flex-wrap:wrap">`+k.seats.map((s,i)=>`<div class="stc ${k.cur==i&&k.st=='play'?'stm':''}" style="min-width:30%"><b>${E(s.n)}</b>${s.npc?'<span class="sm"> NPC</span>':''}<div>${((k.st=='done'&&k.alive[i])||i==mi?k.hands[i]:[null,null]).map(c=>cd(c)).join('')}</div><div class="sm">${!k.alive[i]?'FOLD':k.st=='done'&&k.win.includes(i)?'WINNER':''}</div></div>`).join('')+'</div>'}
+ else h+=`<div class="c">参加者 ${js.length}/${k.n}：${js.map(([p,j])=>E(j.n)).join('、')}</div>`;
+ if(k.st=='play'&&mi>=0&&k.cur==mi&&k.alive[mi])h+=`<div class="c"><button onclick="hAct('c')">続行（${k.ante}C）</button><button class="s" onclick="hAct('f')">降りる</button></div>`;
+ if(k.st=='wait'){if(!seated&&js.length<k.n)h+=`<div class="c"><button onclick="hJoin()">参加する（${k.ante}C）</button></div>`;if(k.host==pid)h+='<div class="c"><button onclick="hostStart(RM)">この人数で行く！（空席はNPC）</button></div>'}
+ if(k.st=='done'){h+=`<div class="msg win">勝者：${k.win.map(i=>E(k.seats[i].n)).join('、')}（${k.desc}）</div>`;if(k.host==pid)h+='<div class="c"><button onclick="hNext()">次のゲーム</button></div>'}
+ if(!seated&&k.st!='done'){const mb=(r.spec||{})[pid];h+=pl?(mb&&mb.rd==k.rd?`<div class="c sm">あなたの予想：${E(k.seats[mb.on].n)} に ${mb.a}C</div>`:`<div class="c sm">観戦予想（BET欄の金額）</div><div class="c">${k.seats.map((s,i)=>`<button class="s" onclick="hBet(${i})">${E(s.n)}</button>`).join('')}</div>`):'<div class="c sm">観戦中。開始後に勝者予想ができます</div>'}
+ if(sp.length)h+=`<div class="c sm">観戦予想 合計 ${sp.reduce((a,[p,x])=>a+x.a,0).toLocaleString()}C（${sp.length}人）</div>`;
+ h+='<div class="c"><button class="s" onclick="hMenu()">退室</button></div>';$('#hold').innerHTML=h}
+async function hPoll(){if(!RM||hp||$('#hold').hidden)return;hp=1;try{const r=await rget(RM);if(!r||!r.core){toast('部屋が見つかりません');hMenu();return}if(r.core.host==pid)await hostTick(RM,r);hRender(r);hClaim(r)}catch(e){}finally{hp=0}}
+setInterval(hPoll,1200);
 </script></body></html>
