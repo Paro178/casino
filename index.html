@@ -648,24 +648,32 @@ const lotk=L.get('lotk')||[],lotpd=L.get('lotpd')||{};
 $('#tabs').insertAdjacentHTML('afterend','<div class="box" id="lot" hidden></div>');
 $('#lobby').insertAdjacentHTML('beforeend',gc('lot','SUNDAY LOTTERY','日曜だけ販売、翌週の土曜に抽選結果を発表。6桁の番号が下の桁から揃うほど高額当選。','<b style="font:700 22px Georgia,serif;letter-spacing:.1em;color:#e3cf9a">0 7 7 7 7 7</b>'));
 function tab(t){CT=t;['lobby','slot','pachi','roul','bj','pk','hold','hl','watch','lot','rank','hist'].forEach(x=>{const e=$('#'+x);if(e)e.hidden=x!=t});$('#tray').hidden=!GN[t]||t=='lot';if(t=='rank')rk();if(t=='hist')hs();if(t=='hold')hMenu();if(t=='watch')wMenu();else WP=null;if(t=='lot')lotr();scrollTo(0,0)}
-async function lotr(){if($('#lot').hidden||!me)return;const key=lotKey(),d=jst(),dow=d.getUTCDay(),sale=dow==0,own=OWNER.includes(me.name),pt=new Date(lotPub(key)+9*3600000),info=(await get('lot/'+key))||{},my=((info.t||{})[pid]||{}).a||[];
+async function lotr(){if($('#lot').hidden||!me)return;const key=lotKey(),d=jst(),dow=d.getUTCDay(),sale=dow==0,own=OWNER.includes(me.name),pt=new Date(lotPub(key)+9*3600000),info=(await get(lp(key)))||{},my=((info.t||{})[pid]||{}).a||[];
  let h=`<div class="lt">SUNDAY LOTTERY</div><div class="c sm">1枚 ${LP}C ・ 6桁の番号 ・ 販売は日曜（日本時間）のみ ・ 結果は翌週の土曜に発表 ・ 1回につき最大${LMAX}枚</div><div class="c">今日は${DOW[dow]}曜日 ・ ${sale?'<b class="win">販売中！</b>':'今日は販売していません'}</div><div class="c sm">今回の回：${key}（日）販売分 ／ 結果発表 ${pt.getUTCMonth()+1}月${pt.getUTCDate()}日（土）0:00</div>`;
  if(sale||own){h+=`<div class="c" style="margin:8px 0"><input id="ln" inputmode="numeric" maxlength="6" placeholder="6桁の番号" style="width:140px;text-align:center"> <button onclick="lotBuy([$('#ln').value])">この番号で購入</button></div><div class="c"><button class="s" onclick="lotBuy(Array.from({length:1},lotNum))">ランダム1枚</button><button class="s" onclick="lotBuy(Array.from({length:5},lotNum))">5枚</button><button class="s" onclick="lotBuy(Array.from({length:10},lotNum))">10枚</button></div>`+(own&&!sale?'<div class="c sm">（ぱろ専用：日曜以外でも購入できます）</div>':'')}
  h+=`<div class="c sm" style="margin-top:8px">あなたの購入分（${my.length}/${LMAX}枚）</div><div class="c">${my.join('　')||'—'}</div>`;
- const ks=[...new Set([key,...lotk])].slice(0,4);for(const k of ks){const i=k==key?info:(await get('lot/'+k))||{};if(!lotVis(i,k))continue;const mine=((i.t||{})[pid]||{}).a||[];
+ const ks=[...new Set([key,...lotk])].slice(0,4);for(const k of ks){const i=k==key?info:(await get(lp(k)))||{};if(!lotVis(i,k))continue;const mine=((i.t||{})[pid]||{}).a||[];
   h+=`<div class="box" style="margin:8px 0"><div class="c"><b>${k} 販売分の結果</b> ・ 当選番号 <b style="font:700 20px Georgia;letter-spacing:.15em;color:#e3cf9a">${i.win}</b></div>`+(mine.length?mine.map(n=>{const r=lotRank(n,i.win);return`<div class="c sm">${n} ${r>=0?`<b class="win">${LNM[r]} ${LPR[r].toLocaleString()}C</b>`:'ハズレ'}</div>`}).join(''):'<div class="c sm">この回は購入していません</div>');
-  const ws=[];Object.values(i.t||{}).forEach(p=>(p.a||[]).forEach(n=>{const r=lotRank(n,i.win);if(r>=0&&r<4)ws.push(`${E(p.n)}：${LNM[r].slice(0,2)}`)}));h+=`<div class="c sm">高額当選者：${ws.join('、')||'なし'}</div></div>`}
+  const ws=[];Object.values(i.t||{}).forEach(p=>(p.a||[]).forEach(n=>{const r=lotRank(n,i.win);if(r>=0&&r<4)ws.push(`${E(p.n)}：${LNM[r].slice(0,2)}`)}));const tot=mine.reduce((a,n)=>{const r=lotRank(n,i.win);return a+(r>=0?LPR[r]:0)},0),pd=(i.paid||{})[pid]||lotpd[k];h+=(tot>0?`<div class="c sm">賞金 ${tot.toLocaleString()}C ${pd?'入金済み':'まもなく自動で入金されます'}</div>`:mine.length?'<div class="c sm">今回は当選なし</div>':'')+`<div class="c sm">高額当選者：${ws.join('、')||'なし'}</div></div>`}
  h+='<div class="sm c" style="margin-top:6px">賞金：'+LPR.map((p,i)=>`${LNM[i]} ${p.toLocaleString()}C`).join(' ／ ')+'</div>';
- if(own)h+=`<div class="c" style="margin-top:10px"><button class="s" onclick="lotForce()">今すぐ抽選（テスト）</button></div><div class="sm c">※ぱろ専用。今回の回を今すぐ抽選して結果を見られます（全員に反映されます）</div>`;
+ if(own)h+=await lotTPanel();
  $('#lot').innerHTML=h}
-async function lotBuy(a){const key=lotKey(),sale=jst().getUTCDay()==0,own=OWNER.includes(me.name);if(!sale&&!own)return toast('宝くじは日曜日のみ購入できます');
+async function lotBuy(a,tk){const key=tk||lotKey(),sale=jst().getUTCDay()==0,own=OWNER.includes(me.name);if(tk&&!own)return;if(!sale&&!own)return toast('宝くじは日曜日のみ購入できます');
  a=a.map(x=>String(x).trim());if(a.some(x=>!/^\d{6}$/.test(x)))return toast('6桁の数字を入力してください');
- const i=(await get('lot/'+key))||{},old=((i.t||{})[pid]||{}).a||[];if(i.win&&lotVis(i,key))return toast('この回はすでに抽選済みです');if(old.length+a.length>LMAX)return toast(`1回につき最大${LMAX}枚までです`);
- const cost=LP*a.length;if(cost>me.money)return toast('クレジットが不足しています');await add(-cost);await set(`lot/${key}/t/${pid}`,{n:me.name,a:[...old,...a]});if(!lotk.includes(key)){lotk.unshift(key);L.set('lotk',lotk)}toast(`${a.length}枚購入しました`);lotr()}
-async function lotDraw(k,force){let i=(await get('lot/'+k))||{};if(!i.win){await set('lot/'+k+'/win',lotNum());await sleep(1200)}if(force)await set('lot/'+k+'/force',1);return (await get('lot/'+k))||{}}
-async function lotForce(){if(!OWNER.includes(me.name))return;await lotDraw(lotKey(),1);toast('抽選しました');await lotSweep();lotr()}
-async function lotSweep(){if(!me||!DB_URL)return;for(const k of [...lotk]){if(lotpd[k])continue;let i=(await get('lot/'+k))||{};if(!i.win&&Date.now()>=lotPub(k))i=await lotDraw(k,0);if(!lotVis(i,k))continue;
+ const i=(await get(lp(key)))||{},old=((i.t||{})[pid]||{}).a||[];if(i.win&&lotVis(i,key))return toast('この回はすでに抽選済みです');if(old.length+a.length>LMAX)return toast(`1回につき最大${LMAX}枚までです`);
+ const cost=LP*a.length;if(cost>me.money)return toast('クレジットが不足しています');await add(-cost);await set(lp(key)+'/t/'+pid,{n:me.name,a:[...old,...a]});if(!tk&&!lotk.includes(key)){lotk.unshift(key);L.set('lotk',lotk)}toast(`${a.length}枚購入しました`);lotr()}
+async function lotDraw(k,force){let i=(await get(lp(k)))||{};if(!i.win){await set(lp(k)+'/win',lotNum());await sleep(1200)}if(force)await set(lp(k)+'/force',1);return (await get(lp(k)))||{}}
+let lotB=0;
+var lotT=L.get('lott')||1,TR=null;const lp=k=>k[0]=='T'?'lott/'+pid+'/'+k:'lot/'+k;
+async function lotSweep(){if(!me||!DB_URL)return;for(const k of [...lotk]){if(lotpd[k])continue;let i=(await get(lp(k)))||{};if(!i.win&&Date.now()>=lotPub(k))i=await lotDraw(k,0);if(!lotVis(i,k))continue;
   const mine=((i.t||{})[pid]||{}).a||[];if((i.paid||{})[pid]||!mine.length){lotpd[k]=1;L.set('lotpd',lotpd);continue}
-  let tot=0;mine.forEach(n=>{const r=lotRank(n,i.win);if(r>=0)tot+=LPR[r]});await set(`lot/${k}/paid/${pid}`,1);lotpd[k]=1;L.set('lotpd',lotpd);if(tot>0)await add(tot);hlog('lot',mine.length*LP,tot);toast(tot>0?`宝くじ当選！ +${tot.toLocaleString()}C`:'宝くじ：今回は当選なし')}}
+  let tot=0;mine.forEach(n=>{const r=lotRank(n,i.win);if(r>=0)tot+=LPR[r]});await set(lp(k)+'/paid/'+pid,1);lotpd[k]=1;L.set('lotpd',lotpd);if(tot>0)await add(tot);hlog('lot',mine.length*LP,tot);toast(tot>0?`宝くじ当選！ +${tot.toLocaleString()}C が入金されました`:'宝くじ：今回は当選なし');lotr()}}
+async function lotTPanel(){const k='T'+lotT,i=(await get(lp(k)))||{},mine=((i.t||{})[pid]||{}).a||[];
+ let h=`<div class="box" style="margin:12px 0;border-color:#e05252"><div class="c"><b>テストモード（ぱろ専用・全体に影響しません）</b></div><div class="c sm">テスト第${lotT}回 ・ 購入・抽選・次の回を何度でも。クレジットは実際に増減します</div><div class="c"><input id="tn" inputmode="numeric" maxlength="6" placeholder="6桁" style="width:110px;text-align:center"> <button class="s" onclick="lotBuy([$('#tn').value],'${k}')">購入</button><button class="s" onclick="lotBuy(Array.from({length:5},lotNum),'${k}')">ランダム5枚</button></div><div class="c sm">購入分：${mine.join('　')||'—'}</div>`;
+ if(i.win){h+=`<div class="c">当選番号 <b style="font:700 20px Georgia;color:#e3cf9a">${i.win}</b></div>`+mine.map(n=>{const r=lotRank(n,i.win);return`<div class="c sm">${n} ${r>=0?`<b class="win">${LNM[r]} ${LPR[r].toLocaleString()}C</b>`:'ハズレ'}</div>`}).join('')+(TR&&TR.k==k?`<div class="c">${TR.tot>0?'入金 +'+TR.tot.toLocaleString()+'C':'当選なし'}</div>`:'')+'<div class="c"><button onclick="lotTNext()">次の回へ</button></div>'}
+ else h+='<div class="c"><button onclick="lotTDraw()">この回を今すぐ抽選</button></div>';return h+'</div>'}
+async function lotTDraw(){if(!OWNER.includes(me.name)||lotB)return;lotB=1;try{const k='T'+lotT,i=(await get(lp(k)))||{},mine=((i.t||{})[pid]||{}).a||[];if(i.win)return toast('この回は抽選済みです。次の回へ進んでください');if(!mine.length)return toast('先にテスト用のチケットを購入してください');
+ const w=lotNum();let tot=0;mine.forEach(n=>{const r=lotRank(n,w);if(r>=0)tot+=LPR[r]});await set(lp(k)+'/win',w);await set(lp(k)+'/force',1);if(tot>0)await add(tot);hlog('lot',mine.length*LP,tot);TR={k,tot};toast(tot>0?`テスト当選 +${tot.toLocaleString()}C`:'テスト抽選：当選なし')}finally{lotB=0}lotr()}
+function lotTNext(){lotT++;L.set('lott',lotT);TR=null;lotr()}
 setInterval(lotr,6000);setInterval(lotSweep,12000);
 </script></body></html>
