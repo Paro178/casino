@@ -376,14 +376,14 @@ $('#tabs').insertAdjacentHTML('afterend','<div class="box g" id="hold" hidden></
 $('#lobby').insertAdjacentHTML('beforeend',gc('hold',"TEXAS HOLD'EM",'友達と対戦（マルチ）またはNPCとソロ。観戦者は勝者を予想して賭けられます。勝者がポットを総取り。',A('A','♠')+A('A','♥')));
 function tab(t){['lobby','slot','pachi','roul','bj','pk','hold','rank','hist'].forEach(x=>{const e=$('#'+x);if(e)e.hidden=x!=t});$('#tray').hidden=!GN[t];if(t=='rank')rk();if(t=='hist')hs();if(t=='hold')hMenu();scrollTo(0,0)}
 async function hMenu(){RM=null;if(!DB_URL)return void($('#hold').innerHTML='<div class="c">オンライン接続（DB_URL）が必要です</div>');
- $('#hold').innerHTML=`<div class="c sm">TEXAS HOLD'EM ／ バイイン＝上のBET欄の金額（SB=1/50・BB=1/25）</div><div class="c">人数 <select id="hn" style="width:80px">${[2,3,4,5,6].map(x=>`<option ${x==4?'selected':''}>${x}</option>`).join('')}</select></div><div class="c"><button onclick="hCreate(0)">ソロで遊ぶ</button><button onclick="hCreate(1)">マルチ部屋を作る</button></div><div class="lt">OPEN ROOMS</div><div id="hl"></div>`;
- const all=(await get('rooms'))||{};$('#hl').innerHTML=Object.entries(all).filter(([c,r])=>r&&r.core&&r.core.mu&&r.core.st!='done'&&Date.now()-r.core.t<7200000).map(([c,r])=>`<div class="gc" style="padding:8px" onclick="RM='${c}';hPoll()"><div><h3 style="font-size:14px">${E(r.core.hn)} の部屋 #${c}</h3><p>${r.core.n}人 ・ 参加費 ${r.core.ante}C ・ ${r.core.st=='wait'?'募集中（参加／観戦）':'進行中（観戦可）'}</p></div></div>`).join('')||'<div class="sm c">開催中の部屋はありません</div>'}
-async function hCreate(mu){const n=+$('#hn').value,ante=Math.floor(+$('#bet').value);if(!(ante>=(cfg.minb||10))||ante>me.money||ante>(cfg.maxb||100000))return toast('参加費が不正か、クレジット不足です');
- const c=String(1000+R(9000));await add(-ante);await set(rp(c)+'/core',{host:pid,hn:me.name,mu,n,ante,st:'wait',rd:1,t:Date.now()});await set(rp(c)+'/joins/'+pid,{n:me.name,t:Date.now(),rd:1});RM=c;if(!mu)await hostStart(c);hPoll()}
+ $('#hold').innerHTML=`<div class="c sm">CARD ROOMS ／ 参加費・バイイン＝上のBET欄の金額（ホールデムのSB=1/50・BB=1/25）</div><div class="c">人数 <select id="hn" style="width:80px">${[2,3,4,5,6].map(x=>`<option ${x==4?'selected':''}>${x}</option>`).join('')}</select></div><div class="c sm">テキサスホールデム</div><div class="c"><button onclick="hCreate(0)">ソロで遊ぶ</button><button onclick="hCreate(1)">みんなで遊ぶ（部屋を作る）</button></div><div class="c sm">ハイ&ロー サバイバル</div><div class="c"><button onclick="hCreate(0,'hl')">ソロで遊ぶ</button><button onclick="hCreate(1,'hl')">みんなで遊ぶ（部屋を作る）</button></div><div class="lt">OPEN ROOMS</div><div id="hl"></div>`;
+ const all=(await get('rooms'))||{};$('#hl').innerHTML=Object.entries(all).filter(([c,r])=>r&&r.core&&r.core.mu&&r.core.st!='done'&&Date.now()-r.core.t<7200000).map(([c,r])=>`<div class="gc" style="padding:8px" onclick="RM='${c}';hPoll()"><div><h3 style="font-size:14px">【${r.core.game=='hl'?'ハイ&ロー':'ホールデム'}】${E(r.core.hn)} の部屋 #${c}</h3><p>${r.core.n}人 ・ 参加費 ${r.core.ante}C ・ ${r.core.st=='wait'?'募集中（参加／観戦）':'進行中（観戦可）'}</p></div></div>`).join('')||'<div class="sm c">開催中の部屋はありません</div>'}
+async function hCreate(mu,g){const n=+$('#hn').value,ante=Math.floor(+$('#bet').value);if(!(ante>=(cfg.minb||10))||ante>me.money||ante>(cfg.maxb||100000))return toast('参加費が不正か、クレジット不足です');
+ const c=String(1000+R(9000));await add(-ante);await set(rp(c)+'/core',{host:pid,hn:me.name,mu,n,ante,st:'wait',rd:1,game:g||'holdem',t:Date.now()});await set(rp(c)+'/joins/'+pid,{n:me.name,t:Date.now(),rd:1});RM=c;if(!mu)await hostStart(c);hPoll()}
 async function hostStart(c){const r=await rget(c),k=r.core,hu=Object.entries(r.joins||{}).filter(([p,j])=>j.rd==k.rd).sort((a,b)=>a[1].t-b[1].t).map(([p,j])=>({p,n:j.n})),pl=[...POOL].sort(()=>Math.random()-.5),seats=hu.slice(0,k.n);
  while(seats.length<k.n){const x=pl.pop();seats.push({p:'npc'+seats.length,n:x.n,npc:1})}const dk=deck();
  await set(rp(c)+'/core',{...k,seats,hands:seats.map(()=>[dk.pop(),dk.pop()]),dk,board:[],alive:seats.map(()=>1),ac:seats.map(()=>0),cur:0,street:0,st:'play',pot:k.ante*seats.length,win:[],t:Date.now()})}
-async function hostTick(c,r){const k=r.core;if(k.st!='play')return;const i=k.cur,s=k.seats[i];let v=null;
+async function hostTick(c,r){const k=r.core;if(k.st!='play')return;if(k.game=='hl')return hlTick(c,r);const i=k.cur,s=k.seats[i];let v=null;
  if(s.npc){if(Date.now()-k.t<1300)return;const sc=bestN([...k.hands[i],...(k.board||[])]),hi=Math.max(...k.hands[i].map(rv));v=(k.street==0?(k.hands[i][0].r==k.hands[i][1].r||hi>=11||R(10)<4):(sc>=1e10||R(100)<35))?'c':'f'}
  else{const a=(r.acts||{})[s.p];if(a&&a.rd==k.rd&&a.s==k.street)v=a.v;else if(Date.now()-k.t>45000)v='f';else return}
  const q={...k,alive:[...k.alive],ac:[...k.ac],board:[...(k.board||[])]};if(v=='f')q.alive[i]=0;else q.pot+=q.ante;q.ac[i]=1;
@@ -396,7 +396,7 @@ async function hAct(v){const k=HK;if(v=='c'){if(me.money<k.ante)return toast('�
 async function hJoin(){await add(-HK.ante);await set(rp(RM)+'/joins/'+pid,{n:me.name,t:Date.now(),rd:HK.rd})}
 async function hBet(i){const a=Math.floor(+$('#bet').value);if(!(a>=(cfg.minb||10))||a>me.money||a>(cfg.maxb||100000))return toast('賭け金が不正か、クレジット不足です');await add(-a);await set(rp(RM)+'/spec/'+pid,{n:me.name,on:i,a,rd:HK.rd})}
 async function hNext(){const k=HK;if(!k.mu){RM=null;return hCreate(0)}if(me.money<k.ante)return toast('クレジット不足です');await add(-k.ante);
- await set(rp(RM)+'/joins',null);await set(rp(RM)+'/spec',null);await set(rp(RM)+'/acts',null);await set(rp(RM)+'/core',{host:pid,hn:k.hn,mu:k.mu,n:k.n,ante:k.ante,st:'wait',rd:k.rd+1,t:Date.now()});await set(rp(RM)+'/joins/'+pid,{n:me.name,t:Date.now(),rd:k.rd+1})}
+ await set(rp(RM)+'/joins',null);await set(rp(RM)+'/spec',null);await set(rp(RM)+'/acts',null);await set(rp(RM)+'/core',{host:pid,hn:k.hn,mu:k.mu,n:k.n,ante:k.ante,game:k.game,st:'wait',rd:k.rd+1,t:Date.now()});await set(rp(RM)+'/joins/'+pid,{n:me.name,t:Date.now(),rd:k.rd+1})}
 function hClaim(r){const k=r.core;if(k.st!='done')return;const key=RM+'-'+k.rd;if(hcl[key])return;hcl[key]=1;L.set('hcl',hcl);const i=k.seats.findIndex(s=>s.p==pid),b=(r.spec||{})[pid];let tot=0;
  if(i>=0&&k.win.includes(i))tot+=Math.floor(k.pot/k.win.length);
  if(b&&b.rd==k.rd){const sp=Object.values(r.spec).filter(x=>x.rd==k.rd),pool=sp.reduce((a,x)=>a+x.a,0),wb=sp.filter(x=>k.win.includes(x.on)).reduce((a,x)=>a+x.a,0);tot+=wb>0?(k.win.includes(b.on)?Math.floor(b.a*pool/wb):0):b.a}
@@ -543,7 +543,7 @@ async function vPick(j){if(V.ph!=3||V.sh)return;V.sh=1;vr(-1);await sleep(900);c
 const hSB=k=>Math.max(1,Math.round(k.ante/50)),hBB=k=>Math.max(2,Math.round(k.ante/25));
 async function hostStart(c){const r=await rget(c),k=r.core,hu=Object.entries(r.joins||{}).filter(([p,j])=>j.rd==k.rd).sort((a,b)=>a[1].t-b[1].t).map(([p,j])=>({p,n:j.n})),pl=[...POOL].sort(()=>Math.random()-.5),seats=hu.slice(0,k.n);
  while(seats.length<k.n){const x=pl.pop();seats.push({p:'npc'+seats.length,n:x.n,npc:1})}
- const n=seats.length,dk=deck(),q={...k,seats,n,hands:seats.map(()=>[dk.pop(),dk.pop()]),dk,board:[],alive:seats.map(()=>1),stk:seats.map(()=>k.ante),bet:seats.map(()=>0),tot:seats.map(()=>0),ac:seats.map(()=>0),street:0,an:0,st:'play',win:[],dlr:(k.rd-1)%n,t:Date.now()};
+ if(k.game=='hl'){const dk=deck(),c0=dk.pop();return set(rp(c)+'/core',{...k,seats,n:seats.length,dk,card:c0,alive:seats.map(()=>1),an:0,rnd:0,hist:[],st:'play',pot:k.ante*seats.length,win:[],t:Date.now()})}const n=seats.length,dk=deck(),q={...k,seats,n,hands:seats.map(()=>[dk.pop(),dk.pop()]),dk,board:[],alive:seats.map(()=>1),stk:seats.map(()=>k.ante),bet:seats.map(()=>0),tot:seats.map(()=>0),ac:seats.map(()=>0),street:0,an:0,st:'play',win:[],dlr:(k.rd-1)%n,t:Date.now()};
  const sb=n==2?q.dlr:(q.dlr+1)%n,bb=n==2?(q.dlr+1)%2:(q.dlr+2)%n,post=(i,a)=>{const p=Math.min(q.stk[i],a);q.stk[i]-=p;q.bet[i]+=p;q.tot[i]+=p};
  post(sb,hSB(k));post(bb,hBB(k));q.cb=hBB(k);q.lr=hBB(k);q.cur=n==2?sb:(bb+1)%n;await set(rp(c)+'/core',q)}
 function npcAct(k,i){const hd=k.hands[i],bd=k.board||[],tc=Math.max(0,k.cb-k.bet[i]),pot=k.tot.reduce((a,b)=>a+b,0),BB=hBB(k);let s;
@@ -553,7 +553,7 @@ function npcAct(k,i){const hd=k.hands[i],bd=k.board||[],tc=Math.max(0,k.cb-k.bet
  if(tc==0)return s>.62&&R(100)<55?{v:'r',a:k.cb+Math.max(BB,Math.floor(pot/2))}:{v:'k'};
  if(s>tc/(pot+tc)+.18||(tc<=BB&&R(100)<50))return s>.85&&R(100)<35?{v:'r',a:k.cb+Math.max(k.lr,Math.floor(pot/2))}:{v:'k'};
  return{v:'f'}}
-async function hostTick(c,r){const k=r.core;if(k.st!='play')return;const i=k.cur,s=k.seats[i],tc=Math.max(0,k.cb-k.bet[i]);let a=null;
+async function hostTick(c,r){const k=r.core;if(k.st!='play')return;if(k.game=='hl')return hlTick(c,r);const i=k.cur,s=k.seats[i],tc=Math.max(0,k.cb-k.bet[i]);let a=null;
  if(s.npc){if(Date.now()-k.t<1300)return;a=npcAct(k,i)}else{const x=(r.acts||{})[s.p];if(x&&x.rd==k.rd&&x.n==k.an)a=x;else if(Date.now()-k.t>45000)a={v:tc?'f':'k'};else return}
  await hApply(c,k,i,a)}
 async function hApply(c,k,i,a){const q={...k,alive:[...k.alive],stk:[...k.stk],bet:[...k.bet],tot:[...k.tot],ac:[...k.ac],board:[...(k.board||[])]},tc=Math.max(0,q.cb-q.bet[i]),n=q.seats.length;
@@ -578,12 +578,12 @@ async function hAct(v,a){const k=HK;await set(rp(RM)+'/acts/'+pid,{rd:k.rd,n:k.a
 function hRs(w){const k=HK,i=k.seats.findIndex(s=>s.p==pid),pot=k.tot.reduce((a,b)=>a+b,0),call=Math.max(0,k.cb-k.bet[i]);
  hAct('r',w=='min'?k.cb+k.lr:w=='half'?k.cb+Math.floor((pot+call)/2):w=='pot'?k.cb+pot+call:k.bet[i]+k.stk[i])}
 function hClaim(r){const k=r.core;if(k.st!='done')return;const key=RM+'-'+k.rd;if(hcl[key])return;hcl[key]=1;L.set('hcl',hcl);const i=k.seats.findIndex(s=>s.p==pid),b=(r.spec||{})[pid];let tot=0;
- if(i>=0)tot+=k.stk[i];
+ if(i>=0)tot+=k.game=='hl'?(k.win.includes(i)?Math.floor(k.pot/k.win.length):0):k.stk[i];
  if(b&&b.rd==k.rd){const sp=Object.values(r.spec).filter(x=>x.rd==k.rd),pool=sp.reduce((a,x)=>a+x.a,0),wb=sp.filter(x=>k.win.includes(x.on)).reduce((a,x)=>a+x.a,0);tot+=wb>0?(k.win.includes(b.on)?Math.floor(b.a*pool/wb):0):b.a}
  if(i>=0||(b&&b.rd==k.rd)){if(tot>0)add(tot);hlog('hold',i>=0?k.ante:b.a,tot);toast(`精算 ${tot.toLocaleString()}C`)}}
 function hRender(r){const k=r.core,mi=(k.seats||[]).findIndex(s=>s.p==pid),pl=k.st!='wait',js=Object.entries(r.joins||{}).filter(([p,j])=>j.rd==k.rd),sp=Object.entries(r.spec||{}).filter(([p,x])=>x.rd==k.rd),seated=pl?mi>=0:js.some(([p])=>p==pid);HK=k;
- let h=`<div class="c sm">ROOM #${RM} ・ ${E(k.hn)} の部屋 ・ バイイン ${k.ante}C ・ ${k.n}人${k.mu?'':'（ソロ）'} ・ SB ${hSB(k)} / BB ${hBB(k)}</div>`;
- if(pl){const pot=k.tot.reduce((a,b)=>a+b,0);h+=`<div class="c" style="margin:6px">${(k.board||[]).map(c=>cd(c)).join('')||'<span class="sm">ボード未公開</span>'}</div><div class="c">POT <b>${pot.toLocaleString()}C</b> ・ ${k.st=='done'?'結果':HS[Math.min(k.street,3)]}${k.cb?` ・ 現在のベット ${k.cb}`:''}</div><div class="stb" style="flex-wrap:wrap">`+k.seats.map((s,i)=>`<div class="stc ${k.cur==i&&k.st=='play'?'stm':''}" style="min-width:30%"><b>${E(s.n)}</b>${s.npc?'<span class="sm"> NPC</span>':''}${k.dlr==i?' <span class="sm">[D]</span>':''}<div class="sm">スタック ${Math.floor(k.stk[i]).toLocaleString()}${k.bet[i]?` ／ ベット ${k.bet[i]}`:''}</div><div>${((k.st=='done'&&k.alive[i])||i==mi?k.hands[i]:[null,null]).map(c=>cd(c)).join('')}</div><div class="sm">${!k.alive[i]?'FOLD':k.stk[i]==0&&k.st=='play'?'ALL IN':k.st=='done'&&k.win.includes(i)?'WINNER':''}</div></div>`).join('')+'</div>'}
+ let h=`<div class="c sm">ROOM #${RM} ・ ${E(k.hn)} の部屋 ・ バイイン ${k.ante}C ・ ${k.n}人${k.mu?'':'（ソロ）'} ・ ${k.game=='hl'?'ハイ&ロー サバイバル':`SB ${hSB(k)} / BB ${hBB(k)}`}</div>`;
+ if(pl&&k.game=='hl')h+=hlBoard(r,k,mi);else if(pl){const pot=k.tot.reduce((a,b)=>a+b,0);h+=`<div class="c" style="margin:6px">${(k.board||[]).map(c=>cd(c)).join('')||'<span class="sm">ボード未公開</span>'}</div><div class="c">POT <b>${pot.toLocaleString()}C</b> ・ ${k.st=='done'?'結果':HS[Math.min(k.street,3)]}${k.cb?` ・ 現在のベット ${k.cb}`:''}</div><div class="stb" style="flex-wrap:wrap">`+k.seats.map((s,i)=>`<div class="stc ${k.cur==i&&k.st=='play'?'stm':''}" style="min-width:30%"><b>${E(s.n)}</b>${s.npc?'<span class="sm"> NPC</span>':''}${k.dlr==i?' <span class="sm">[D]</span>':''}<div class="sm">スタック ${Math.floor(k.stk[i]).toLocaleString()}${k.bet[i]?` ／ ベット ${k.bet[i]}`:''}</div><div>${((k.st=='done'&&k.alive[i])||i==mi?k.hands[i]:[null,null]).map(c=>cd(c)).join('')}</div><div class="sm">${!k.alive[i]?'FOLD':k.stk[i]==0&&k.st=='play'?'ALL IN':k.st=='done'&&k.win.includes(i)?'WINNER':''}</div></div>`).join('')+'</div>'}
  else h+=`<div class="c">参加者 ${js.length}/${k.n}：${js.map(([p,j])=>E(j.n)).join('、')}</div>`;
  if(k.st=='play'&&mi>=0&&k.cur==mi&&k.alive[mi]&&k.stk[mi]>0){const tc=Math.max(0,k.cb-k.bet[mi]);h+=`<div class="c"><button class="s" onclick="hAct('f')">フォールド</button><button onclick="hAct('k')">${tc?'コール '+Math.min(tc,k.stk[mi]):'チェック'}</button></div><div class="c sm">レイズ</div><div class="c"><button class="s" onclick="hRs('min')">最小</button><button class="s" onclick="hRs('half')">½ POT</button><button class="s" onclick="hRs('pot')">POT</button><button class="s" onclick="hRs('all')">ALL IN</button></div>`}
  if(k.st=='wait'){if(!seated&&js.length<k.n)h+=`<div class="c"><button onclick="hJoin()">参加する（バイイン ${k.ante}C）</button></div>`;if(k.host==pid)h+='<div class="c"><button onclick="hostStart(RM)">この人数で行く！（空席はNPC）</button></div>'}
@@ -601,7 +601,7 @@ function hlOdd(k){const dk=HLs.dk,cr=rk13(HLs.c),hi=dk.filter(c=>rk13(c)>cr).len
 function hlr(){const o=HLs;$('#hlh').innerHTML=o.h.slice(-7).map(c=>`<span style="opacity:.7;display:inline-block;transform:scale(.8);margin:0 -4px">${cd(c)}</span>`).join('');
  $('#hlc').innerHTML=`<div style="display:inline-block;transform:scale(1.5)">${cd(o.c)}</div>`;$('#hli').innerHTML=o.c?`POT <b>${Math.floor(o.pot).toLocaleString()}C</b> ・ 連勝 ${o.n} ・ 残り ${o.dk.length}枚`:'';
  const b=(k,t)=>{const od=hlOdd(k);return`<button ${od?'':'disabled'} onclick="hlPick('${k}')">${t}<br><span class="sm">${od?'×'+od:'—'}</span></button>`};
- $('#hlb').innerHTML=o.ph==0?'<button onclick="hlDeal()">DEAL</button>':o.ph==1?b('hi','HIGH ▲')+b('sm','SAME')+b('lo','LOW ▼'):o.ph==2?'<button onclick="hlCollect()">受け取る</button><button class="s" onclick="hlNext()">続ける</button>':''}
+ $('#hlb').innerHTML=o.ph==0?'<button onclick="hlDeal()">ひとりで遊ぶ（DEAL）</button><button class="s" onclick="tab(\'hold\')">みんなで遊ぶ（サバイバル）</button>':o.ph==1?b('hi','HIGH ▲')+b('sm','SAME')+b('lo','LOW ▼'):o.ph==2?'<button onclick="hlCollect()">受け取る</button><button class="s" onclick="hlNext()">続ける</button>':''}
 hlr();
 async function hlDeal(){if(HLs.ph||!await start())return;HLs.dk=deck();HLs.c=HLs.dk.pop();HLs.h=[];HLs.pot=cur;HLs.n=0;HLs.ph=1;$('#m-hl').className='msg';$('#m-hl').textContent='HIGH / SAME / LOW を選んでください';hlr()}
 async function hlPick(k){const o=HLs;if(o.ph!=1)return;const od=hlOdd(k);if(!od)return;o.ph=3;const cr=rk13(o.c),nx=o.dk.pop();o.h.push(o.c);hlr();await sleep(500);o.c=nx;tone(600,.05,0,'square',.05);
@@ -676,4 +676,16 @@ async function lotTDraw(){if(!OWNER.includes(me.name)||lotB)return;lotB=1;try{co
  const w=lotNum();let tot=0;mine.forEach(n=>{const r=lotRank(n,w);if(r>=0)tot+=LPR[r]});await set(lp(k)+'/win',w);await set(lp(k)+'/force',1);if(tot>0)await add(tot);hlog('lot',mine.length*LP,tot);TR={k,tot};toast(tot>0?`テスト当選 +${tot.toLocaleString()}C`:'テスト抽選：当選なし')}finally{lotB=0}lotr()}
 function lotTNext(){lotT++;L.set('lott',lotT);TR=null;lotr()}
 setInterval(lotr,6000);setInterval(lotSweep,12000);
+/* ===== v17: ハイ＆ロー サバイバル（ソロ／マルチ） ===== */
+async function hlTick(c,r){const k=r.core,acts=r.acts||{},al=k.seats.map((s,i)=>i).filter(i=>k.alive[i]);if(Date.now()-k.t<1500)return;
+ const pk={};let ready=true;for(const i of al){const s=k.seats[i];if(s.npc){const hi=k.dk.filter(x=>rk13(x)>rk13(k.card)).length,lo=k.dk.filter(x=>rk13(x)<rk13(k.card)).length;const good=hi>lo?'hi':'lo',bad=hi>lo?'lo':'hi';pk[i]=hi==lo?(R(2)?'hi':'lo'):(R(100)<72?good:bad)}else{const a=acts[s.p];if(a&&a.rd==k.rd&&a.n==k.an)pk[i]=a.v;else if(Date.now()-k.t>25000)pk[i]=R(2)?'hi':'lo';else ready=false}}
+ if(!ready)return;const q={...k,alive:[...k.alive],dk:[...k.dk],hist:[...(k.hist||[])]},nx=q.dk.pop(),cr=rk13(k.card),nr=rk13(nx),res=nr>cr?'hi':nr<cr?'lo':'sm',surv=al.filter(i=>res=='sm'||pk[i]==res);
+ q.hist.push({c:nx,res});if(surv.length>0)al.forEach(i=>{if(!surv.includes(i))q.alive[i]=0});
+ q.card=nx;q.an=(k.an||0)+1;q.rnd=(k.rnd||0)+1;q.t=Date.now();const left=q.seats.map((s,i)=>i).filter(i=>q.alive[i]);
+ if(left.length<=1||q.rnd>=8||q.dk.length<4){q.st='done';q.win=left;q.desc=left.length==1?'最後の生き残り':`${q.rnd}ラウンド生存`}
+ await set(rp(c)+'/core',q)}
+async function hlAct(v){await set(rp(RM)+'/acts/'+pid,{rd:HK.rd,n:HK.an||0,v});HK.an=-1}
+function hlBoard(r,k,mi){const al=k.seats.map((s,i)=>i).filter(i=>k.alive[i]),my=(r.acts||{})[pid],picked=my&&my.rd==k.rd&&my.n==k.an;
+ let h=`<div class="c sm">HIGH & LOW サバイバル ・ 外した人は脱落 ・ 最後まで残った人がポット総取り（${k.rnd||0}/8ラウンド）</div><div class="c" style="margin:8px 0"><div style="display:inline-block;transform:scale(1.4);margin:12px">${cd(k.card)}</div></div><div class="c sm">POT ${k.pot.toLocaleString()}C ・ 残り ${al.length}人 ・ 履歴 ${(k.hist||[]).map(x=>x.res=='hi'?'▲':x.res=='lo'?'▼':'＝').join(' ')}</div><div class="stb" style="flex-wrap:wrap">`+k.seats.map((s,i)=>`<div class="stc" style="min-width:30%"><b>${E(s.n)}</b>${s.npc?'<span class="sm"> NPC</span>':''}<div class="sm">${k.alive[i]?(k.st=='done'&&k.win.includes(i)?'WINNER':'生存'):'脱落'}</div></div>`).join('')+'</div>';
+ if(k.st=='play'&&mi>=0&&k.alive[mi])h+=picked?'<div class="c sm">選択済み… 他のプレイヤーを待っています</div>':'<div class="c"><button onclick="hlAct(\'hi\')">HIGH ▲</button><button onclick="hlAct(\'lo\')">LOW ▼</button></div><div class="c sm">同じ数字は全員セーフ ・ 25秒で自動選択</div>';return h}
 </script></body></html>
