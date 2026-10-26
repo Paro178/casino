@@ -654,7 +654,7 @@ async function lotr(){if($('#lot').hidden||!me)return;const key=lotKey(),d=jst()
  let h=`<div class="lt">SUNDAY LOTTERY</div><div class="c sm">1枚 ${LP}C ・ 6桁の番号 ・ 販売は日曜（日本時間）のみ ・ 結果は翌日（月曜）0:00に発表 ・ 1回につき最大${LMAX}枚</div><div class="c">今日は${DOW[dow]}曜日 ・ ${sale?'<b class="win">販売中！</b>':'今日は販売していません'}</div><div class="c sm">今回の回：${key}（日）販売分 ／ 結果発表 ${pt.getUTCMonth()+1}月${pt.getUTCDate()}日（月）0:00</div>`;
  if(sale||own){h+=`<div class="c" style="margin:8px 0"><input id="ln" inputmode="numeric" maxlength="6" placeholder="6桁の番号" style="width:140px;text-align:center"> <button onclick="lotBuy([$('#ln').value])">この番号で購入</button></div><div class="c"><button class="s" onclick="lotBuy(Array.from({length:1},lotNum))">ランダム1枚</button><button class="s" onclick="lotBuy(Array.from({length:5},lotNum))">5枚</button><button class="s" onclick="lotBuy(Array.from({length:10},lotNum))">10枚</button></div>`+(own&&!sale?'<div class="c sm">（ぱろ専用：日曜以外でも購入できます）</div>':'')}
  h+=`<div class="c sm" style="margin-top:8px">あなたの購入分（${my.length}/${LMAX}枚）</div><div class="c">${my.join('　')||'—'}</div>`;
- const ks=[...new Set([key,...lotk])].slice(0,4);for(const k of ks){const i=k==key?info:(await get(lp(k)))||{};if(!lotVis(i,k))continue;const mine=((i.t||{})[pid]||{}).a||[];
+ const ks=[...new Set([key,...(await lotMine()).ks,...lotk.filter(x=>/^\d{4}-/.test(x))])].slice(0,4);for(const k of ks){const i=k==key?info:(await get(lp(k)))||{};if(!lotVis(i,k))continue;const mine=((i.t||{})[pid]||{}).a||[];
   h+=`<div class="box" style="margin:8px 0"><div class="c"><b>${k} 販売分の結果</b> ・ 当選番号 <b style="font:700 20px Georgia;letter-spacing:.15em;color:#e3cf9a">${i.win}</b></div>`+(mine.length?mine.map(n=>{const r=lotRank(n,i.win);return`<div class="c sm">${n} ${r>=0?`<b class="win">${LNM[r]} ${LPR[r].toLocaleString()}C</b>`:'ハズレ'}</div>`}).join(''):'<div class="c sm">この回は購入していません</div>');
   const ws=[];Object.values(i.t||{}).forEach(p=>(p.a||[]).forEach(n=>{const r=lotRank(n,i.win);if(r>=0&&r<4)ws.push(`${E(p.n)}：${LNM[r].slice(0,2)}`)}));const tot=mine.reduce((a,n)=>{const r=lotRank(n,i.win);return a+(r>=0?LPR[r]:0)},0),pd=(i.paid||{})[pid]||lotpd[k];h+=(tot>0?`<div class="c sm">賞金 ${tot.toLocaleString()}C ${pd?'入金済み':'まもなく自動で入金されます'}</div>`:mine.length?'<div class="c sm">今回は当選なし</div>':'')+`<div class="c sm">高額当選者：${ws.join('、')||'なし'}</div></div>`}
  h+='<div class="sm c" style="margin-top:6px">賞金：'+LPR.map((p,i)=>`${LNM[i]} ${p.toLocaleString()}C`).join(' ／ ')+'</div>';
@@ -667,7 +667,8 @@ async function lotBuy(a,tk){const key=tk||lotKey(),sale=jst().getUTCDay()==0,own
 async function lotDraw(k,force){let i=(await get(lp(k)))||{};if(!i.win){await set(lp(k)+'/win',lotNum());await sleep(1200)}if(force)await set(lp(k)+'/force',1);return (await get(lp(k)))||{}}
 let lotB=0;
 var lotT=L.get('lott')||1,TR=null;const lp=k=>k[0]=='T'?'lott/'+pid+'/'+k:'lot/'+k;
-async function lotSweep(){if(!me||!DB_URL)return;for(const k of [...lotk]){if(lotpd[k])continue;let i=(await get(lp(k)))||{};if(!i.win&&Date.now()>=lotPub(k))i=await lotDraw(k,0);if(!lotVis(i,k))continue;
+async function lotMine(){const all=(await get('lot'))||{},ks=Object.keys(all).filter(k=>/^\d{4}-\d\d-\d\d$/.test(k)&&((all[k]||{}).t||{})[pid]).sort().reverse();return{all,ks}}
+async function lotSweep(){if(!me||!DB_URL)return;const{all,ks}=await lotMine();for(const k of [...new Set([...ks,...lotk.filter(x=>/^\d{4}-/.test(x))])]){if(lotpd[k])continue;let i=all[k]||(await get(lp(k)))||{};if(!i.win&&Date.now()>=lotPub(k))i=await lotDraw(k,0);if(!lotVis(i,k))continue;
   const mine=((i.t||{})[pid]||{}).a||[];if((i.paid||{})[pid]||!mine.length){lotpd[k]=1;L.set('lotpd',lotpd);continue}
   let tot=0;mine.forEach(n=>{const r=lotRank(n,i.win);if(r>=0)tot+=LPR[r]});await set(lp(k)+'/paid/'+pid,1);lotpd[k]=1;L.set('lotpd',lotpd);if(tot>0)await add(tot);hlog('lot',mine.length*LP,tot);toast(tot>0?`宝くじ当選！ +${tot.toLocaleString()}C が入金されました`:'宝くじ：今回は当選なし');lotr()}}
 async function lotTPanel(){const k='T'+lotT,i=(await get(lp(k)))||{},mine=((i.t||{})[pid]||{}).a||[];
@@ -777,6 +778,7 @@ const _tb2=tab;tab=function(t){_tb2(t);if(t=='rules')rulesR()};
 document.head.insertAdjacentHTML('beforeend','<style>body.vip{background:radial-gradient(ellipse at 50% 0,#4a1020 0,#1a0509 60%,#080203 100%) fixed}body.vip h1{color:#e8c14a;text-shadow:0 0 16px #b8860b99}body.vip .box.g{background:repeating-linear-gradient(45deg,#ffffff04 0 2px,#0000 2px 4px),radial-gradient(ellipse at 50% 35%,#7a1a2c 0,#4a0f1b 62%,#2a0710 100%)}.vipb{background:linear-gradient(#f4dc80,#a8741f);box-shadow:0 0 18px #e8c14a88,0 4px 10px #000a;letter-spacing:.25em;padding:12px 26px}</style>');
 var VIPU=false,VIPS=0,VIPM=false;
 const vipOK=()=>VIPU||isGM(),vipOn=()=>VIPM&&vipOK();
+$('#lobby').insertAdjacentHTML('beforeend','<div class="sm c" style="margin:16px 0;opacity:.45">ver 2026.10.26</div>');
 $('#lobby').insertAdjacentHTML('afterbegin','<div id="vipbar" class="c" style="margin:8px 0"></div>');
 function vipUI(){document.body.classList.toggle('vip',vipOn());$('h1').textContent=vipOn()?'ROYAL CASINO  ·  VIP':'ROYAL CASINO';const b=$('#vipbar');if(!b)return;
  b.innerHTML=vipOK()?(vipOn()?'<button class="s" onclick="vipSw(0)">ノーマル室へ戻る</button><div class="sm" style="margin-top:4px">VIP室：賞金10倍 ／ 勝率とNPCは超高難度</div>':'<button class="vipb" onclick="vipSw(1)">VIP室</button>'):`<div class="sm">連勝 ${VIPS} / 20</div>`}
