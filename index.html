@@ -2,6 +2,8 @@
 <title>ロイヤルカジノ</title>
 <meta name="apple-mobile-web-app-title" content="ROYAL CASINO"><meta name="apple-mobile-web-app-status-bar-style" content="black">
 <script>/* ★ここにFirebase Realtime DatabaseのURLを貼る（例: "https://xxxx-default-rtdb.asia-southeast1.firebasedatabase.app"） */
+/* ★メンテナンス切替: true=サービス停止中 / false=通常営業 */
+const MAINTENANCE=true;
 const DB_URL="https://parokajino-default-rtdb.asia-southeast1.firebasedatabase.app";</script>
 <style>
 :root{color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#0b1d15;--cd:#15372a;--bd:#2f6a50;--tx:#f4ecd0;--go:#e8c14a;--rd:#c0392b}
@@ -23,6 +25,7 @@ input,select{background:#0b1d15;color:var(--tx);border:1px solid var(--bd);borde
 #adm{position:fixed;inset:0;background:#000d;overflow:auto;padding:12px;z-index:9}
 table{width:100%}td{padding:2px}
 #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#000;color:#fff;padding:8px 14px;border-radius:20px;display:none;z-index:99}
+#maint{position:fixed;inset:0;z-index:2147483647;background:#0b1d15;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;color:#f4ecd0}#maint h2{color:#e8c14a;font-size:24px;margin:0 0 18px}#maint p{font-size:17px;line-height:1.8;margin:0;max-width:420px}#maint .ic{font-size:56px;margin-bottom:12px}
 </style><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#0b1d15">
 <style>
 body{background:radial-gradient(ellipse at top,#1b5a3f 0,#0b1d15 70%) fixed;-webkit-text-size-adjust:100%;touch-action:manipulation}
@@ -41,6 +44,8 @@ button.s{background:linear-gradient(#2c6a50,#1b4a37);box-shadow:0 3px 0 #0a2418,
 .cf{position:fixed;top:-40px;font-size:28px;font-style:normal;animation:fall 2.2s linear both}@keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
 </style>
 </head><body>
+<div id="maint" style="display:none"><div class="ic">🛠️</div><h2>〜重要なお知らせ〜</h2><p>大型アップデートの実施にともない、<br>システムメンテナンスによるサービス一時停止を実行します。<br>終了までしばらくお待ちください。</p></div>
+<script>if(MAINTENANCE){document.getElementById("maint").style.display="flex";document.body.style.overflow="hidden"}</script>
 <h1>ロイヤルカジノ </h1>
 <div id="login" class="box"><div class="c">ニックネームを入力して参加</div><input id="nm" maxlength="12" placeholder="ニックネーム"><button style="width:100%" onclick="login()">参加する</button><div class="sm c">同じ名前で入ると所持金が引き継がれます</div></div>
 <div id="app" hidden>
@@ -64,7 +69,8 @@ button.s{background:linear-gradient(#2c6a50,#1b4a37);box-shadow:0 3px 0 #0a2418,
 <div id="adin"><input id="pw" type="password" placeholder="パスワード" inputmode="numeric"><button style="width:100%" onclick="chk()">入室</button></div>
 <div id="adbody" hidden><b>ゲーム設定</b><div id="cf"></div><button onclick="saveCfg()">設定を保存</button><hr><b>プレイヤーの所持金</b><div class="sm" id="ownnote"></div><div id="pl"></div></div></div></div>
 <div id="toast"></div>
-<script>
+<script>if(MAINTENANCE){throw new Error("maintenance")}
+
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const R=n=>Math.floor(Math.random()*n),sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
